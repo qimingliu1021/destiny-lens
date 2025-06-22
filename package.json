@@ -1,4 +1,6 @@
 {
+  "name": "destiny-lens",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -6,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "remotion:preview": "remotion preview app/api/video-generation/images/remotion/index.ts",
-    "remotion:render": "remotion render app/api/video-generation/images/remotion/index.ts Slideshow out.mp4"
+    "remotion:render": "remotion render app/api/video-generation/images/remotion/index.ts Slideshow out.mp4",
+    "remotion": "remotion studio remotion/index.ts"
   },
   "dependencies": {
     "@google/genai": "^1.6.0",
@@ -14,11 +17,13 @@
     "@radix-ui/react-dropdown-menu": "^2.1.14",
     "@radix-ui/react-label": "^2.1.6",
     "@radix-ui/react-slot": "^1.2.2",
-    "@remotion/cli": "4.0.318",
+    "@remotion/cli": "^4.0.318",
     "@remotion/eslint-plugin": "^4.0.318",
+    "@remotion/player": "^4.0.318",
     "@remotion/renderer": "4.0.318",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "^2.50.0",
+    "axios": "^1.10.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "ffmpeg-static": "^5.2.0",
@@ -26,9 +31,10 @@
     "lucide-react": "^0.511.0",
     "next": "latest",
     "next-themes": "^0.4.6",
+    "node-fetch": "^2.7.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "remotion": "4.0.318",
+    "remotion": "^4.0.318",
     "tailwind-merge": "^3.3.0",
     "videoshow": "^0.1.12"
   },
