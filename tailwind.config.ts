@@ -11,71 +11,76 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
+        background: "#fdf6ec", // Parchment-like
+        foreground: "#4b1e1e", // Deep earthy red
+
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "#a6192e", // Fortune red
+          foreground: "#ffffff",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "#fff4e6", // Light scroll background
+          foreground: "#a6192e",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "#e6b422", // Imperial gold
+          foreground: "#4b1e1e",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "#8b1e1e",
+          foreground: "#fff",
         },
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
+        muted: {
+          DEFAULT: "#fce8cc",
+          foreground: "#a6192e",
+        },
+        border: "#a6192e",
+        input: "#fcefe6",
+        ring: "#e6b422",
+
+        card: {
+          DEFAULT: "#fffdf9",
+          foreground: "#4b1e1e",
+        },
+        popover: {
+          DEFAULT: "#fffaf0",
+          foreground: "#4b1e1e",
+        },
+
         chart: {
-          "1": "hsl(var(--chart-1))",
-          "2": "hsl(var(--chart-2))",
-          "3": "hsl(var(--chart-3))",
-          "4": "hsl(var(--chart-4))",
-          "5": "hsl(var(--chart-5))",
+          "1": "#e6b422",
+          "2": "#a6192e",
+          "3": "#8b1e1e",
+          "4": "#d49a6a",
+          "5": "#f0cba8",
         },
       },
+      fontFamily: {
+        serif: ['"Noto Serif SC"', "serif"], // Chinese serif vibe
+      },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "1rem",
+        md: "0.75rem",
+        sm: "0.5rem",
       },
       animation: {
         'spin-slow': 'spin 2s linear infinite',
+        'bounce-slight': 'bounce-slight 0.6s ease-out',
+        'pulse-subtle': 'pulse-subtle 4s ease-in-out infinite',
+      },
+      keyframes: {
+        'bounce-slight': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-8%)' },
+        },
+        'pulse-subtle': {
+          '0%, 100%': { opacity: 1 },
+          '50%': { opacity: 0.92 },
+        },
       },
     },
   },
   plugins: [require("tailwindcss-animate")],
-extend: {
-  animation: {
-    'spin-slow': 'spin 2s linear infinite',
-    'bounce-slight': 'bounce-slight 0.6s ease-out',
-  },
-  keyframes: {
-    'bounce-slight': {
-      '0%, 100%': { transform: 'translateY(0)' },
-      '50%': { transform: 'translateY(-8%)' },
-    },
-  },
-},
-
 };
 
 export default config;
