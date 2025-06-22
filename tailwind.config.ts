@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-export default {
+const config: Config = {
   darkMode: ["class"],
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -57,7 +57,25 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      animation: {
+        'spin-slow': 'spin 2s linear infinite',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
-} satisfies Config;
+extend: {
+  animation: {
+    'spin-slow': 'spin 2s linear infinite',
+    'bounce-slight': 'bounce-slight 0.6s ease-out',
+  },
+  keyframes: {
+    'bounce-slight': {
+      '0%, 100%': { transform: 'translateY(0)' },
+      '50%': { transform: 'translateY(-8%)' },
+    },
+  },
+},
+
+};
+
+export default config;
