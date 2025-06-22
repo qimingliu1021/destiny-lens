@@ -4,6 +4,7 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import { AuthButton } from "@/components/auth-button";
 import { InfoIcon } from "lucide-react";
 
+
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center bg-background text-foreground">
