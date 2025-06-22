@@ -1,105 +1,22 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+## Project Story
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+In life, there are moments when we try our absolute best—yet the outcome feels beyond our control. But when we stay true to what we deeply want, life often opens a path. DestinyLens was inspired by this belief: that knowing yourself is the first step to finding direction.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+"As someone who faced both identity struggles and academic setbacks, I know what it feels like to stand at a crossroads with no clear direction. When I first realized I was different from others in terms of my sexuality, I began longing for a life where I could simply be myself—love freely, and build a life with someone I care about. That dream became a quiet source of strength, pushing me to go abroad and live more authentically.
+But it wasn’t easy. I didn’t get into my dream university the first time I took the Gaokao, China’s fiercely competitive college entrance exam. Watching others move forward while I stayed behind was heartbreaking. Still, I refused to give up. I studied harder, took the exam again a year later, and finally got into the school I had dreamed of. That same spirit carried me into grad school—I didn’t have the best scores or the most impressive resume, but I gave everything I had, and was accepted to NYU. 
+Through those moments, I came to believe something deeply: you can’t always control the outcome, but if your intention is steady and your desire is true, the path will reveal itself. And in those uncertain moments, it’s incredibly powerful to have something that reflects your inner truth back to you." 
 
-## Features
+That’s when we turned to one of the world’s oldest and most profound systems of self-guidance: the Yijing (易经), or Book of Changes.
+Originating over 3,000 years ago, the Yijing is not just a tool of fortune-telling, it’s a philosophical framework rooted in Taoist and Confucian thought, centered on the dynamic flow of life, change, and harmony with nature (fire, water, wood, gold, earth). Through six symbolic coin (or dice) throws, the Yijing generates a hexagram, which reflects the user's current state and offers insight into patterns of transformation. It has been used for centuries by emperors, scholars, and seekers to make decisions not just based on logic, but on deeper alignment with timing, identity, and destiny.
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+We asked ourselves:
 
-## Demo
+What if this ancient compass could be reimagined for the modern world—especially for young people standing at one of the most transformative thresholds of life?
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+By fusing the symbolic wisdom of the Yijing with contemporary tools—personality profiling, urban data analysis, and intuitive design—we created a digital experience that helps users gain clarity about who they are, and insight into where they belong. We draw from city indices like cost of living, job opportunity, and cultural vibrancy, but we don’t stop there. Our goal is not to just suggest a city; it is to reflect a path that feels aligned with one’s inner character and current moment in life.
+In doing so, we aim to honor the richness of Chinese philosophical heritage and demonstrate how timeless wisdom can still guide us through today’s most pressing personal decisions.
+For the students who feel lost, floating, or stuck, we offer a moment of reflection, a ritual of discovery, and a gentle nudge toward their next chapter.
 
-## Deploy to Vercel
+## Structure
+![IMG_4305](https://github.com/user-attachments/assets/88cce9d5-5470-4aa4-b6f1-6f71ba753edc)![IMG_4306](https://github.com/user-attachments/assets/7c3efa64-fd9f-4a83-af45-3d86d46f1bae)
 
-Vercel deployment will guide you through creating a Supabase account and project.
-
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
-
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
-
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
-
-## Clone and run locally
-
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
-
-2. Create a Next.js app using the Supabase Starter template npx command
-
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
-
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
-
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
-
-3. Use `cd` to change into the app's directory
-
-   ```bash
-   cd with-supabase-app
-   ```
-
-4. Rename `.env.example` to `.env.local` and update the following:
-
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=[INSERT SUPABASE PROJECT API ANON KEY]
-   ```
-
-   Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
-
-5. You can now run the Next.js local development server:
-
-   ```bash
-   npm run dev
-   ```
-
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
-
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
-
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
-
-## Feedback and issues
-
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
-
-## More Supabase examples
-
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
