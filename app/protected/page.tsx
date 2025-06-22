@@ -16,6 +16,13 @@ const trigramMap: Record<string, { name: string; symbol: string; direction: stri
   '100': { name: 'Gèn', symbol: '☶', direction: 'Northeast' },
 };
 
+type FortuneResponse = {
+  selectedCity: string;
+  explanation: string;
+  fortune: string;
+  recommendedPlaces: { name: string; reason: string }[];
+};
+
 const getHexagramDirections = (hexagram: string[]): string => {
   if (hexagram.length !== 6) return 'Unknown';
   const binary = hexagram.map((l) => (l === 'yang' ? '1' : '0'));
@@ -31,7 +38,7 @@ export default function ProtectedPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [hexagram, setHexagram] = useState<string[]>([]);
-  const [fortune, setFortune] = useState<string | null>(null);
+  const [fortune, setFortune] = useState<FortuneResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [showLines, setShowLines] = useState(false);
 
@@ -49,39 +56,45 @@ export default function ProtectedPage() {
   }, [router]);
 
   const flipCoins = async () => {
-    setFortune(null);
-    setShowLines(false);
-    setLoading(true);
+  setFortune(null);
+  setShowLines(false);
+  setLoading(true);
 
-    const newHexagram = Array.from({ length: 6 }, () =>
-      Math.random() < 0.5 ? 'yin' : 'yang'
-    );
-    setHexagram(newHexagram);
+  const newHexagram = Array.from({ length: 6 }, () =>
+    Math.random() < 0.5 ? 'yin' : 'yang'
+  );
+  setHexagram(newHexagram);
 
-    const binary = newHexagram.map((l) => (l === 'yang' ? '1' : '0')).join('');
-    console.log('🔢 Generated binary:', binary);
+  const binary = newHexagram.map((l) => (l === 'yang' ? '1' : '0')).join('');
+  console.log('🔢 Generated binary:', binary);
 
-    try {
-      const res = await fetch('/api/fortune', {
-        method: 'POST',
-        body: JSON.stringify({ binary }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+  try {
+    const res = await fetch('/api/fortune', {
+      method: 'POST',
+      body: JSON.stringify({ binary }),
+      headers: { 'Content-Type': 'application/json' },
+    });
 
-      const data = await res.json();
-      console.log('🔮 Response from oracle:', data);
+    const data = await res.json();
+    console.log('🔮 Response from oracle:', data);
 
-      setTimeout(() => {
-        setShowLines(true);
-        setFortune(data.fortune || 'Could not generate a fortune. Try again.');
-      }, 1000);
-    } catch (e) {
-      console.error('❌ Error calling oracle:', e);
-      setFortune('Error connecting to the oracle.');
-    } finally {
-      setTimeout(() => setLoading(false), 1000);
-    }
-  };
+    setTimeout(() => {
+      setShowLines(true);
+      setFortune(data);
+    }, 1000);
+  } catch (e) {
+    console.error('❌ Error calling oracle:', e);
+    setFortune({
+      selectedCity: 'Unknown',
+      explanation: 'Error connecting to the oracle.',
+      fortune: 'No insight could be retrieved at this time.',
+      recommendedPlaces: [],
+    });
+  } finally {
+    setTimeout(() => setLoading(false), 1000);
+  }
+};
+
 
   const renderCoin = (line: string, index: number) => (
     <div
@@ -133,26 +146,41 @@ export default function ProtectedPage() {
           </button>
 
           {hexagram.length > 0 && (
-  <>
-    <div className="flex justify-center gap-2 mb-4">
-      {hexagram.map((line, i) => renderCoin(line, i))}
-    </div>
-    <div className="flex flex-col-reverse gap-2 mb-4">
-      {hexagram.map((line, i) => renderLine(line, i))}
-    </div>
+            <>
+              <div className="flex justify-center gap-2 mb-4">
+                {hexagram.map((line, i) => renderCoin(line, i))}
+              </div>
+              <div className="flex flex-col-reverse gap-2 mb-4">
+                {hexagram.map((line, i) => renderLine(line, i))}
+              </div>
 
-    {showLines && (
-      <div className="text-sm text-center text-muted-foreground mt-2 whitespace-pre-line">
-        {getHexagramDirections(hexagram)}
-      </div>
-    )}
-  </>
-)}
-
+              {showLines && (
+                <div className="text-sm text-center text-muted-foreground mt-2 whitespace-pre-line">
+                  {getHexagramDirections(hexagram)}
+                </div>
+              )}
+            </>
+          )}
 
           {fortune && (
-            <div className="mt-4 p-4 border rounded bg-muted text-sm whitespace-pre-line">
-              {fortune}
+            <div className="mt-6 space-y-6">
+
+
+              <div>
+                <h3 className="text-lg font-semibold text-center">
+                  ✨ {fortune.selectedCity}
+                </h3>
+                <p className="text-sm text-muted-foreground whitespace-pre-line mt-2">
+                  {fortune.explanation}
+                </p>
+                <ul className="mt-4 space-y-3 text-sm">
+                  {fortune.recommendedPlaces?.map((place, idx) => (
+                    <li key={idx} className="border-l-4 border-purple-400 pl-3">
+                      <strong>{place.name}:</strong> {place.reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
         </div>
