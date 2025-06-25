@@ -48,6 +48,8 @@ const getHexagramDirections = (hexagram: string[]): string => {
   const upper = binary.slice(3, 6).reverse().join("");
   const lowerTrigram = trigramMap[lower];
   const upperTrigram = trigramMap[upper];
+  const [showLines, setShowLines] = useState(false);
+
   if (!lowerTrigram || !upperTrigram) return "Direction unknown";
   return `Lower Trigram: ${lowerTrigram.symbol} (${lowerTrigram.name}) → ${lowerTrigram.direction}\nUpper Trigram: ${upperTrigram.symbol} (${upperTrigram.name}) → ${upperTrigram.direction}`;
 };
@@ -63,9 +65,8 @@ export default function ProtectedPage() {
     null
   );
   const [loading, setLoading] = useState(false);
-  const [showLines, setShowLines] = useState(false);
-  const [lifeAnalysis, setLifeAnalysis] = useState<any>(null);
   const [hexagramData, setHexagramData] = useState<any>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
   useEffect(() => {
     const getUser = async () => {
@@ -80,10 +81,33 @@ export default function ProtectedPage() {
     getUser();
   }, [router]);
 
+  const renderCoin = (line: string, index: number) => (
+    <div
+      key={index}
+      className={`relative w-12 h-12 rounded-full shadow-md text-xl font-bold transition-all duration-700 flex items-center justify-center ${
+        loading
+          ? "bg-gray-300 animate-spin-slow"
+          : `${
+              line === "yang"
+                ? "bg-yellow-400 text-black"
+                : "bg-purple-500 text-white"
+            } animate-bounce-slight`
+      }`}
+      style={{ animationDelay: `${index * 100}ms` }}
+    >
+      {loading && (
+        <span className="absolute inset-0 flex items-center justify-center text-2xl">
+          🪙
+        </span>
+      )}
+      {!loading && (line === "yang" ? "⚊" : "⚋")}
+    </div>
+  );
+
   const flipCoins = async () => {
     setFortuneCity(null);
-    setLifeAnalysis(null); // Add new state
-    setShowLines(false);
+    setFortuneLife(null);
+    setImageUrls([]);
     setLoading(true);
     setHexagramData(null);
 
@@ -96,7 +120,7 @@ export default function ProtectedPage() {
     const binary = newHexagram.map((l) => (l === "yang" ? "1" : "0")).join("");
 
     try {
-      // Call both APIs in parallel
+      // Call all APIs including image fetching
       const [cityResponse, lifeResponse, hexagramResponse] = await Promise.all([
         fetch("/api/fortune-city", {
           method: "POST",
@@ -124,7 +148,18 @@ export default function ProtectedPage() {
         setFortuneLife(lifeData);
         setHexagramData(hexagramCsvData);
 
-        console.log("Hexagram CSV data:", hexagramCsvData);
+        // Fetch images after getting city data
+        const imageResponse = await fetch("/api/image-fetching", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ binary }),
+        });
+
+        if (imageResponse.ok) {
+          const imageData = await imageResponse.json();
+          setImageUrls(imageData.imageUrls || []);
+          console.log("🖼️ Image URLs ready:", imageData.imageUrls);
+        }
       }
     } catch (error) {
       console.error("Error:", error);
@@ -132,40 +167,6 @@ export default function ProtectedPage() {
       setLoading(false);
     }
   };
-
-  const renderCoin = (line: string, index: number) => (
-    <div
-      key={index}
-      className={`relative w-12 h-12 rounded-full shadow-md text-xl font-bold transition-all duration-700 flex items-center justify-center ${
-        loading
-          ? "bg-gray-300 animate-spin-slow"
-          : `${
-              line === "yang"
-                ? "bg-yellow-400 text-black"
-                : "bg-purple-500 text-white"
-            } animate-bounce-slight`
-      }`}
-      style={{ animationDelay: `${index * 100}ms` }}
-    >
-      {loading && (
-        <span className="absolute inset-0 flex items-center justify-center text-2xl">
-          🪙
-        </span>
-      )}
-      {!loading && (line === "yang" ? "⚊" : "⚋")}
-    </div>
-  );
-
-  const renderLine = (line: string, index: number) => (
-    <div
-      key={index}
-      className={`text-lg font-mono py-1 transition-opacity duration-300 ${
-        showLines ? "opacity-100" : "opacity-0"
-      } ${line === "yang" ? "text-yellow-500" : "text-purple-500"}`}
-    >
-      {line === "yang" ? "⚊ Yang (solid)" : "⚋ Yin (broken)"}
-    </div>
-  );
 
   return (
     <div className="flex-1 w-full flex flex-col items-center gap-8 p-8">
@@ -183,7 +184,6 @@ export default function ProtectedPage() {
       {user && (
         <div className="w-full max-w-md bg-background rounded-lg border p-6 shadow">
           <h2 className="text-xl font-bold mb-4">Your Destiny Hexagram</h2>
-
           <button
             onClick={flipCoins}
             className="mb-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white px-5 py-2 rounded-xl shadow-lg shadow-purple-500/40 hover:shadow-pink-500/50 transition-all duration-300 ease-in-out font-semibold tracking-wider"
@@ -202,7 +202,6 @@ export default function ProtectedPage() {
               </div>
             </div>
           )}
-
           {fortuneCity && fortuneLife && (
             <div className="mt-6 space-y-6">
               {/* Life Analysis Section */}
@@ -320,7 +319,7 @@ export default function ProtectedPage() {
                   Your Destiny Journey
                 </h3>
                 <div className="w-full flex justify-center">
-                  <RemotionPlayer />
+                  <RemotionPlayer imageUrls={imageUrls} />
                 </div>
               </div>
             </div>

@@ -1,17 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import path from "path";
-import { mkdir, writeFile } from "fs/promises";
-
-// Helper to download images
-async function downloadImage(url: string, filename: string, folder: string) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`❌ Failed to download image: ${url}`);
-  const arrayBuffer = await res.arrayBuffer();
-  await mkdir(folder, { recursive: true });
-  const filePath = path.join(folder, filename);
-  await writeFile(filePath, Buffer.from(arrayBuffer));
-  console.log(`✅ Image saved: ${filePath}`);
-}
 
 // DuckDuckGo image search logic (no API key needed)
 async function duckDuckGoImageSearch(query: string): Promise<string | null> {
@@ -54,28 +41,29 @@ async function duckDuckGoImageSearch(query: string): Promise<string | null> {
   return data.results?.[0]?.image || null;
 }
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    console.log("🔍 Fetching city and landmarks from /api/fortune");
-    // 1. Fetch city and landmarks from /api/fortune
-    const fortuneRes = await fetch("http://localhost:3000/api/fortune");
-    const fortuneData = await fortuneRes.json();
-    console.log(
-      "🔍 Fetched from /api/fortune:",
-      JSON.stringify(fortuneData, null, 2)
-    );
+    const { binary } = await req.json();
 
-    const city = fortuneData.city || fortuneData.City || "";
-    const landmarks =
-      fortuneData.landmarks ||
-      fortuneData.Landmarks ||
-      fortuneData.places ||
-      [];
+    console.log("🔍 Fetching city and landmarks from /api/fortune-city");
+
+    // 1. Fetch city and landmarks from /api/fortune-city
+    const fortuneRes = await fetch("http://localhost:3000/api/fortune-city", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ binary }),
+    });
+
+    const fortuneData = await fortuneRes.json();
+    console.log("🔍 Fortune data:", JSON.stringify(fortuneData, null, 2));
+
+    const city = fortuneData.selectedCity || "";
+    const landmarks = fortuneData.recommendedPlaces || [];
 
     if (!city || !Array.isArray(landmarks) || landmarks.length === 0) {
       console.log("⚠️ Invalid fortune data. Missing city or landmarks.");
       return NextResponse.json(
-        { error: "No city or landmarks found from /api/fortune." },
+        { error: "No city or landmarks found from /api/fortune-city." },
         { status: 400 }
       );
     }
@@ -83,47 +71,50 @@ export async function POST() {
     console.log(`🌆 Target City: ${city}`);
     console.log(`📍 Landmarks to search:`, landmarks);
 
-    // 2. Set the target folder to save images
-    const targetFolder = path.join(
-      process.cwd(),
-      "app/api/video-generation/images"
-    );
-
-    // 3. Search and download images
-    const results = await Promise.all(
-      landmarks.map(async (landmark, idx) => {
+    // 2. Search for image URLs (don't download, just get URLs)
+    const imageResults = await Promise.all(
+      landmarks.slice(0, 8).map(async (place, idx) => {
+        const landmark = place.name || place;
         const searchQuery = `${landmark}, ${city}`;
         console.log(`🔎 Searching image for: "${searchQuery}"`);
+
         try {
           const imageUrl = await duckDuckGoImageSearch(searchQuery);
           if (!imageUrl) {
             console.log(`❌ No image found for ${landmark}`);
-            return { landmark, image: null, error: "No image found" };
+            return null;
           }
 
-          const safeLandmark = landmark.replace(/\s+/g, "_").toLowerCase();
-          const safeCity = city.replace(/\s+/g, "_").toLowerCase();
-          const filename = `${safeCity}_${safeLandmark}.jpg`;
-
-          await downloadImage(imageUrl, filename, targetFolder);
           return {
+            index: idx,
             landmark,
-            image: `/api/video-generation/images/${filename}`,
+            imageUrl,
+            searchQuery,
           };
         } catch (err) {
           console.error(`❌ Error processing ${landmark}:`, err);
-          return {
-            landmark,
-            image: null,
-            error: "Image search or download failed",
-          };
+          return null;
         }
       })
     );
 
-    console.log("✅ Final image-fetching result:", results);
+    // Filter out null results
+    const validImages = imageResults.filter((result) => result !== null);
 
-    return NextResponse.json({ city, results });
+    console.log(
+      "✅ Found image URLs:",
+      validImages.map((img) => ({
+        landmark: img.landmark,
+        url: img.imageUrl,
+      }))
+    );
+
+    return NextResponse.json({
+      city,
+      images: validImages,
+      imageUrls: validImages.map((img) => img.imageUrl),
+      count: validImages.length,
+    });
   } catch (e) {
     console.error("🔥 Unexpected error in image-fetching route:", e);
     return NextResponse.json(

@@ -4,28 +4,27 @@ import {
   interpolate,
   useCurrentFrame,
   Audio,
+  staticFile,
 } from "remotion";
 
-// Use string paths instead of imports for Remotion
-const images = [
-  "/api/video-generation/images/0.jpg",
-  "/api/video-generation/images/1.jpg",
-  "/api/video-generation/images/2.jpg",
-  "/api/video-generation/images/3.jpg",
-  "/api/video-generation/images/4.jpg",
-  "/api/video-generation/images/5.jpg",
-  "/api/video-generation/images/6.jpg",
-  "/api/video-generation/images/7.jpg",
+// Fallback images (local)
+const fallbackImages = [
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800",
+  "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=800",
+  "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800",
 ];
 
-export const Slideshow = () => {
+export const Slideshow: React.FC<{
+  imageUrls?: string[];
+}> = ({ imageUrls }) => {
   const frame = useCurrentFrame();
   const imageDuration = 90; // 3 seconds per image at 30fps
+
+  // Use provided image URLs or fallback
+  const images = imageUrls && imageUrls.length > 0 ? imageUrls : fallbackImages;
+
   const currentIndex = Math.floor(frame / imageDuration) % images.length;
-
   const currentImage = images[currentIndex];
-
-  // console.log("currentImage", currentImage);
 
   const localFrame = frame % imageDuration;
 
@@ -52,7 +51,7 @@ export const Slideshow = () => {
         backgroundColor: "#000",
       }}
     >
-      {/* <Img
+      <Img
         src={currentImage}
         style={{
           transform: `scale(${zoom})`,
@@ -61,11 +60,10 @@ export const Slideshow = () => {
           objectFit: "cover",
           opacity,
         }}
-      /> */}
+      />
 
-      {/* 🎵 Play both audio tracks together - Fixed paths */}
-      <Audio src="/poem.mp3" volume={0.8} loop />
-      <Audio src="/grand_1.mp3" volume={0.3} loop />
+      <Audio src={staticFile("poem.mp3")} volume={0.8} loop />
+      <Audio src={staticFile("grand_1.mp3")} volume={0.3} loop />
     </AbsoluteFill>
   );
 };
