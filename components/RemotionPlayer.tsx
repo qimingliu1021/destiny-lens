@@ -1,22 +1,30 @@
 // components/RemotionPlayer.tsx
 "use client";
 import { Player } from "@remotion/player";
-import { MyComp } from "../app/remotion/Composition"; // adjust path as needed
+import { Slideshow } from "../app/remotion/Slideshow";
 
 export default function RemotionPlayer() {
+  console.log("RemotionPlayer is on");
   return (
     <Player
-      component={MyComp}
-      inputProps={{ text: "World" }}
-      durationInFrames={120}
+      component={Slideshow}
+      durationInFrames={1800}
       compositionWidth={1920}
       compositionHeight={1080}
       fps={30}
       style={{
-        width: 1280,
-        height: 720,
+        width: "100%",
+        maxWidth: "800px",
+        aspectRatio: "16/9",
       }}
       controls
+      loop
+      autoPlay
+      showVolumeControls
+      allowFullscreen
+      clickToPlay
+      doubleClickToFullscreen
+      spaceKeyToPlayOrPause
       acknowledgeRemotionLicense
     />
   );

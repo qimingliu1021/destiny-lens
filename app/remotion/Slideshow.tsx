@@ -6,39 +6,42 @@ import {
   Audio,
 } from "remotion";
 
-// Use the FastAPI server's address for your files
-const SERVER = "http://127.0.0.1:8000";
+// Use string paths instead of imports for Remotion
 const images = [
-  `${SERVER}/images/fast-0.jpg`,
-  `${SERVER}/images/fast-1.jpg`,
-  `${SERVER}/images/fast-2.jpg`,
-  `${SERVER}/images/fast-3.jpg`,
+  "/api/video-generation/images/0.jpg",
+  "/api/video-generation/images/1.jpg",
+  "/api/video-generation/images/2.jpg",
+  "/api/video-generation/images/3.jpg",
+  "/api/video-generation/images/4.jpg",
+  "/api/video-generation/images/5.jpg",
+  "/api/video-generation/images/6.jpg",
+  "/api/video-generation/images/7.jpg",
 ];
-const poemURL = `${SERVER}/poem/poem.mp3`;
-const musicURL = `${SERVER}/music/tianxingjiuge.mp3`;
-
-// const images = [img0, img1, img2, img3];
-
-const VIDEO_DURATION_SECONDS = 60;
 
 export const Slideshow = () => {
   const frame = useCurrentFrame();
+  const imageDuration = 90; // 3 seconds per image at 30fps
+  const currentIndex = Math.floor(frame / imageDuration) % images.length;
 
-  // Each image gets 3 seconds (90 frames at 30fps)
-  const imageIndex = Math.floor(frame / 90);
-  const currentImage = images[Math.min(imageIndex, images.length - 1)];
+  const currentImage = images[currentIndex];
 
-  // Fade transition effect
-  const fadeIn = interpolate(frame % 90, [0, 30], [0, 1]);
-  const fadeOut = interpolate(frame % 90, [60, 90], [1, 0]);
+  // console.log("currentImage", currentImage);
+
+  const localFrame = frame % imageDuration;
+
+  // Fade in/out effect
+  const fadeIn = interpolate(localFrame, [0, 30], [0, 1], {
+    extrapolateRight: "clamp",
+  });
+  const fadeOut = interpolate(localFrame, [60, 90], [1, 0], {
+    extrapolateRight: "clamp",
+  });
   const opacity = Math.min(fadeIn, fadeOut);
 
   // Zoom effect
-  const zoom = interpolate(frame % 90, [0, 90], [1, 1.1]);
-
-  // Audio volume control - fade in at start, fade out at end
-  const volume1 = 0.8; // 80% volume for first audio
-  const volume2 = 0.3; // 30% volume for second audio
+  const zoom = interpolate(localFrame, [0, imageDuration], [1, 1.1], {
+    extrapolateRight: "clamp",
+  });
 
   return (
     <AbsoluteFill
@@ -49,22 +52,20 @@ export const Slideshow = () => {
         backgroundColor: "#000",
       }}
     >
-      <Img
+      {/* <Img
         src={currentImage}
         style={{
           transform: `scale(${zoom})`,
           width: "100%",
           height: "100%",
           objectFit: "cover",
-          opacity: opacity,
+          opacity,
         }}
-      />
+      /> */}
 
-      {/* First audio */}
-      <Audio src={poemURL} volume={volume1} loop={false} />
-
-      {/* Second audio, different volume */}
-      <Audio src={musicURL} volume={volume2} loop={false} />
+      {/* 🎵 Play both audio tracks together - Fixed paths */}
+      <Audio src="/poem.mp3" volume={0.8} loop />
+      <Audio src="/grand_1.mp3" volume={0.3} loop />
     </AbsoluteFill>
   );
 };
