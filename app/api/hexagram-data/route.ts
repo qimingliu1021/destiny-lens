@@ -3,6 +3,20 @@ import { readFile } from "fs/promises";
 import { parse } from "csv-parse/sync";
 import path from "path";
 
+// Type definitions
+interface HexagramRecord {
+  binary: string;
+  hex: string;
+  hex_font: string;
+  english: string;
+  pinyin: string;
+  trad_chinese: string;
+  symbolic: string;
+  image: string;
+  judgment: string;
+  lines: string;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { binary } = await req.json();
@@ -14,7 +28,7 @@ export async function POST(req: NextRequest) {
     const reversedBinary = binary.split("").reverse().join("");
     const filePath = path.join(process.cwd(), "public", "yijing_fixed.csv");
     const csvRaw = await readFile(filePath, "utf-8");
-    const records: any[] = parse(csvRaw, {
+    const records: HexagramRecord[] = parse(csvRaw, {
       columns: true,
       skip_empty_lines: true,
     });

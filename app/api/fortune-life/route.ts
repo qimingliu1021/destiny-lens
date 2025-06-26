@@ -3,6 +3,16 @@ import { readFile } from "fs/promises";
 import { parse } from "csv-parse/sync";
 import path from "path";
 
+interface HexagramRecord {
+  binary: string;
+  english: string;
+  symbolic: string;
+  hex_font: string;
+  trigram_above: string;
+  trigram_below: string;
+  [key: string]: string; // For any additional CSV columns
+}
+
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
@@ -12,10 +22,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
+  if (!ANTHROPIC_API_KEY) {
+    return NextResponse.json(
+      { error: "API key not configured" },
+      { status: 500 }
+    );
+  }
+
   const reversedBinary = binary.split("").reverse().join("");
   const filePath = path.join(process.cwd(), "public", "yijing_fixed.csv");
   const csvRaw = await readFile(filePath, "utf-8");
-  const records: any[] = parse(csvRaw, {
+  const records: HexagramRecord[] = parse(csvRaw, {
     columns: true,
     skip_empty_lines: true,
   });

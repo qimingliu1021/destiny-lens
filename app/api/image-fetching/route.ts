@@ -10,7 +10,7 @@ async function duckDuckGoImageSearch(query: string): Promise<string | null> {
     },
   });
   const tokenText = await tokenRes.text();
-  let vqdMatch =
+  const vqdMatch =
     tokenText.match(/vqd='([\d-]+)'/) || tokenText.match(/vqd=([\d-]+)\&/);
   if (!vqdMatch) {
     console.log("❌ No vqd token found in DuckDuckGo search page.");

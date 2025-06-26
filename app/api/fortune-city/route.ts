@@ -6,7 +6,23 @@ import path from "path";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
-// Trigram definitions (same as before)
+interface HexagramRecord {
+  hex: string;
+  hex_font: string;
+  binary: string;
+  english: string;
+  od: string;
+  pinyin: string;
+  trad_chinese: string;
+  above: string;
+  below: string;
+  symbolic: string;
+  image: string;
+  judgment: string;
+  lines: string;
+}
+
+// Complete Trigram definitions for all 8 trigrams
 const trigramMap: Record<
   string,
   { name: string; symbol: string; direction: string; element: string }
@@ -17,8 +33,48 @@ const trigramMap: Record<
     direction: "Northwest",
     element: "Heaven",
   },
-  "000": { name: "Kūn", symbol: "☷", direction: "Southwest", element: "Earth" },
-  // ... (copy all trigram definitions from your current route)
+  "000": {
+    name: "Kūn",
+    symbol: "☷",
+    direction: "Southwest",
+    element: "Earth",
+  },
+  "011": {
+    name: "Duì",
+    symbol: "☱",
+    direction: "West",
+    element: "Lake",
+  },
+  "101": {
+    name: "Lí",
+    symbol: "☲",
+    direction: "South",
+    element: "Fire",
+  },
+  "001": {
+    name: "Zhèn",
+    symbol: "☳",
+    direction: "East",
+    element: "Thunder",
+  },
+  "110": {
+    name: "Xùn",
+    symbol: "☴",
+    direction: "Southeast",
+    element: "Wind",
+  },
+  "010": {
+    name: "Kǎn",
+    symbol: "☵",
+    direction: "North",
+    element: "Water",
+  },
+  "100": {
+    name: "Gèn",
+    symbol: "☶",
+    direction: "Northeast",
+    element: "Mountain",
+  },
 };
 
 const cityMap: Record<string, string[]> = {
@@ -43,10 +99,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!ANTHROPIC_API_KEY) {
+      return NextResponse.json(
+        { error: "API key not configured" },
+        { status: 500 }
+      );
+    }
+
     // Read CSV and find hexagram
     const filePath = path.join(process.cwd(), "public", "yijing_fixed.csv");
     const csvRaw = await readFile(filePath, "utf-8");
-    const records: any[] = parse(csvRaw, {
+    const records: HexagramRecord[] = parse(csvRaw, {
       columns: true,
       skip_empty_lines: true,
     });
@@ -65,9 +128,7 @@ export async function POST(req: NextRequest) {
     const description = match.symbolic;
 
     // Get trigrams and direction
-    const upperTrigram = binary.slice(0, 3);
-    const lowerTrigram = binary.slice(3, 6);
-    const direction = trigramMap[upperTrigram]?.direction || "North";
+    const direction = trigramMap[binary]?.direction || "North";
     const cities = cityMap[direction] || cityMap["North"];
 
     const cityText = cities.map((city, i) => `${i + 1}. ${city}`).join("\n");
@@ -86,7 +147,7 @@ export async function POST(req: NextRequest) {
     const linesWithMeaning = binary
       .split("")
       .map(
-        (bit, i) =>
+        (bit: string, i: number) =>
           `${lineDescriptions[i]} ${
             bit === "1" ? "Yang (solid)" : "Yin (broken)"
           }`

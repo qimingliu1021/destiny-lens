@@ -39,6 +39,13 @@ type FortuneLifeResponse = {
   rawResponse?: string;
 };
 
+interface HexagramData {
+  hexFont: string;
+  english: string;
+  pinyin: string;
+  number: string;
+}
+
 const getHexagramDirections = (hexagram: string[]): string => {
   if (hexagram.length !== 6) return "Unknown";
   const binary = hexagram.map((l) => (l === "yang" ? "1" : "0"));
@@ -60,7 +67,7 @@ export default function HomePage() {
     null
   );
   const [loading, setLoading] = useState(false);
-  const [hexagramData, setHexagramData] = useState<any>(null);
+  const [hexagramData, setHexagramData] = useState<HexagramData | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [showLines, setShowLines] = useState(false);
 
