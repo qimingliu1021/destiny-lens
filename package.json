@@ -9,7 +9,8 @@
     "lint": "next lint",
     "remotion:preview": "remotion preview app/api/video-generation/images/remotion/index.ts",
     "remotion:render": "remotion render app/api/video-generation/images/remotion/index.ts Slideshow out.mp4",
-    "remotion": "remotion studio remotion/index.ts"
+    "remotion": "remotion studio remotion/index.ts",
+    "postinstall": "rm -rf .next && rm -rf node_modules/.cache"
   },
   "dependencies": {
     "@google/genai": "^1.6.0",
