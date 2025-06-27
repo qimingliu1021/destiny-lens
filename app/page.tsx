@@ -178,7 +178,7 @@ export default function HomePage() {
       </div>
 
       {/* Main Fortune Section */}
-      <div className="w-full max-w-md bg-background rounded-lg border p-6 shadow">
+      <div className="w-full max-w-md mx-auto bg-background rounded-lg border p-6 shadow">
         <h2 className="text-xl font-bold mb-4">Your Destiny Hexagram</h2>
         <button
           onClick={flipCoins}
