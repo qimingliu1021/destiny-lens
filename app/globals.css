@@ -67,6 +67,34 @@
   }
 }
 
+/* Coin Tossing Animations */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bounce-slight {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 2s linear infinite;
+}
+
+.animate-bounce-slight {
+  animation: bounce-slight 1s ease-in-out infinite;
+}
+
 /* Ancient Chinese Style Animations */
 @keyframes float {
   0%,

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { InfoIcon } from "lucide-react";
-import RemotionPlayer from "@/components/RemotionPlayer";
+import { InfoIcon, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 type FortuneCityResponse = {
   selectedCity: string;
@@ -43,6 +43,7 @@ export default function CoinTossingPage() {
   const [loading, setLoading] = useState(false);
   const [hexagramData, setHexagramData] = useState<HexagramData | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [readingComplete, setReadingComplete] = useState(false);
 
   const renderCoin = (line: string, index: number) => (
     <div
@@ -73,6 +74,7 @@ export default function CoinTossingPage() {
     setImageUrls([]);
     setLoading(true);
     setHexagramData(null);
+    setReadingComplete(false);
 
     const newHexagram = Array.from({ length: 6 }, () =>
       Math.random() < 0.5 ? "yin" : "yang"
@@ -111,7 +113,13 @@ export default function CoinTossingPage() {
         setFortuneLife(lifeData);
         setHexagramData(hexagramCsvData);
 
-        // Fetch images after getting city data
+        // Store in localStorage for other pages
+        localStorage.setItem("currentHexagram", JSON.stringify(newHexagram));
+        localStorage.setItem("fortuneCity", JSON.stringify(cityData));
+        localStorage.setItem("fortuneLife", JSON.stringify(lifeData));
+        localStorage.setItem("hexagramData", JSON.stringify(hexagramCsvData));
+
+        // Fetch images after getting data
         const imageResponse = await fetch("/api/image-fetching", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -121,8 +129,14 @@ export default function CoinTossingPage() {
         if (imageResponse.ok) {
           const imageData = await imageResponse.json();
           setImageUrls(imageData.imageUrls || []);
+          localStorage.setItem(
+            "imageUrls",
+            JSON.stringify(imageData.imageUrls || [])
+          );
           console.log("🖼️ Image URLs ready:", imageData.imageUrls);
         }
+
+        setReadingComplete(true);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -182,122 +196,108 @@ export default function CoinTossingPage() {
         )}
       </div>
 
-      {fortuneCity && fortuneLife && (
-        <div className="w-full max-w-4xl space-y-8">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-center">
-              🔮 Life Analysis: {fortuneLife.hexagram}
-            </h3>
+      {/* Navigation Cards */}
+      {readingComplete && (
+        <div className="w-full max-w-4xl">
+          <h3 className="text-2xl font-bold text-center mb-8">
+            🌟 Explore Your Destiny
+          </h3>
 
-            {fortuneLife.personalTraits && (
-              <div>
-                <h4 className="font-medium text-purple-600 mb-1">
-                  Personal Traits
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  {fortuneLife.personalTraits}
-                </p>
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Hexagram Analysis Card */}
+            <Link href="/hexagram-analysis">
+              <div className="bg-white p-6 rounded-lg border shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group">
+                <div className="text-center">
+                  <div className="text-4xl mb-4">🔮</div>
+                  <h4 className="text-lg font-semibold text-purple-700 mb-2">
+                    Life Analysis
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Discover your personal traits, career guidance, and
+                    relationship insights
+                  </p>
+                  <div className="flex items-center justify-center gap-2 text-purple-600 group-hover:text-purple-800">
+                    <span>Explore</span>
+                    <ArrowRight size={16} />
+                  </div>
+                </div>
               </div>
-            )}
+            </Link>
 
-            {fortuneLife.currentPhase && (
-              <div>
-                <h4 className="font-medium text-purple-600 mb-1">
-                  Current Life Phase
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  {fortuneLife.currentPhase}
-                </p>
+            {/* City Analysis Card */}
+            <Link href="/city-analysis">
+              <div className="bg-white p-6 rounded-lg border shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group">
+                <div className="text-center">
+                  <div className="text-4xl mb-4">🏙️</div>
+                  <h4 className="text-lg font-semibold text-blue-700 mb-2">
+                    City Analysis
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Find your destiny city and sacred places to visit
+                  </p>
+                  <div className="flex items-center justify-center gap-2 text-blue-600 group-hover:text-blue-800">
+                    <span>Discover</span>
+                    <ArrowRight size={16} />
+                  </div>
+                </div>
               </div>
-            )}
+            </Link>
 
-            {fortuneLife.careerGuidance && (
-              <div>
-                <h4 className="font-medium text-purple-600 mb-1">
-                  Career Guidance
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  {fortuneLife.careerGuidance}
-                </p>
+            {/* Video Journey Card */}
+            <Link href="/video-of-desti">
+              <div className="bg-white p-6 rounded-lg border shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group">
+                <div className="text-center">
+                  <div className="text-4xl mb-4">🎬</div>
+                  <h4 className="text-lg font-semibold text-green-700 mb-2">
+                    Video Journey
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Watch your personalized destiny video unfold
+                  </p>
+                  <div className="flex items-center justify-center gap-2 text-green-600 group-hover:text-green-800">
+                    <span>Watch</span>
+                    <ArrowRight size={16} />
+                  </div>
+                </div>
               </div>
-            )}
-
-            {fortuneLife.relationshipGuidance && (
-              <div>
-                <h4 className="font-medium text-purple-600 mb-1">
-                  Relationships
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  {fortuneLife.relationshipGuidance}
-                </p>
-              </div>
-            )}
-
-            {fortuneLife.growthRecommendations && (
-              <div>
-                <h4 className="font-medium text-purple-600 mb-1">
-                  Growth Recommendations
-                </h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  {fortuneLife.growthRecommendations.map((rec, idx) => (
-                    <li key={idx} className="flex items-start">
-                      <span className="text-purple-400 mr-2">•</span>
-                      {rec}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {fortuneLife.timing && (
-              <div>
-                <h4 className="font-medium text-purple-600 mb-1">Timing</h4>
-                <p className="text-sm text-muted-foreground">
-                  {fortuneLife.timing}
-                </p>
-              </div>
-            )}
-
-            {fortuneLife.error && (
-              <div className="text-red-600 text-sm">
-                <strong>Error:</strong> {fortuneLife.error}
-              </div>
-            )}
-
-            {fortuneLife.rawResponse && (
-              <div className="text-xs text-gray-600 p-2 bg-gray-50 rounded">
-                <strong>Raw Response:</strong>
-                <pre className="whitespace-pre-wrap">
-                  {fortuneLife.rawResponse.substring(0, 200)}...
-                </pre>
-              </div>
-            )}
+            </Link>
           </div>
 
-          <div className="border-b pb-6">
-            <h3 className="text-lg font-semibold text-center mb-2">
-              ✨ {fortuneCity.selectedCity}
-            </h3>
-            <p className="text-sm text-muted-foreground whitespace-pre-line mt-2">
-              {fortuneCity.explanation}
-            </p>
-            <ul className="mt-4 space-y-3 text-sm">
-              {fortuneCity.recommendedPlaces?.map((place, idx) => (
-                <li key={idx} className="border-l-4 border-purple-400 pl-3">
-                  <strong>{place.name}:</strong> {place.reason}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="mt-8 border-t pt-6">
-            <h3 className="text-lg font-semibold mb-4 text-center">
-              Your Destiny Journey
-            </h3>
-            <div className="w-full flex justify-center">
-              <RemotionPlayer imageUrls={imageUrls} />
+          {/* Quick Summary */}
+          <div className="mt-8 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
+            <h4 className="text-lg font-semibold text-center mb-4">
+              Your Reading Summary
+            </h4>
+            <div className="grid md:grid-cols-3 gap-4 text-sm">
+              <div className="text-center">
+                <div className="font-medium text-purple-700">Your Hexagram</div>
+                <div className="text-gray-600">{hexagramData?.english}</div>
+              </div>
+              <div className="text-center">
+                <div className="font-medium text-blue-700">Destiny City</div>
+                <div className="text-gray-600">{fortuneCity?.selectedCity}</div>
+              </div>
+              <div className="text-center">
+                <div className="font-medium text-green-700">Video Status</div>
+                <div className="text-gray-600">
+                  {imageUrls.length > 0 ? "Ready to Watch" : "Generating..."}
+                </div>
+              </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {!readingComplete && !loading && hexagram.length === 0 && (
+        <div className="text-center p-8 bg-gray-50 rounded-lg max-w-md">
+          <div className="text-6xl mb-4">🪙</div>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">
+            Ready for Your Reading?
+          </h3>
+          <p className="text-gray-600">
+            Click the button above to begin your Yijing journey and discover
+            what destiny has in store for you.
+          </p>
         </div>
       )}
     </div>

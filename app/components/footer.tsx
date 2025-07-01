@@ -5,7 +5,7 @@ import Link from "next/link";
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gradient-to-b from-slate-900 via-amber-900/50 to-red-900/50 border-t border-amber-500/20">
+    <footer className="bg-gradient-to-b from-slate-900 via-amber-900/50 to-red-900/50">
       <div className="max-w-7xl mx-auto px-6 py-16">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
@@ -169,7 +169,7 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-amber-500/20">
+        <div className="pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center text-amber-200/70 text-sm mb-4 md:mb-0">
               <span>© 2025 Destiny Lens Inc. All rights reserved.</span>
@@ -190,9 +190,6 @@ const Footer: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Decorative Elements */}
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 via-red-500 to-amber-500 opacity-50"></div>
       </div>
 
       {/* Floating Mystical Elements */}

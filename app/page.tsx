@@ -54,7 +54,7 @@ export default function LandingPage() {
       </div>
 
       <div className="relative z-10">
-        {/* 1. Opening Poetic Title + Call to Action */}
+        {/* Opening Poetic Title + Call to Action */}
         <div
           className={`min-h-screen flex flex-col items-center justify-center px-6 text-center transition-all duration-1000 ${
             isVisible ? "fade-in-up" : "opacity-0"
@@ -93,6 +93,32 @@ export default function LandingPage() {
                 <br />
                 Through ancient coins, your voice, and your face, we generate
                 your personal destiny poem and city of belonging.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Enter Button */}
+        <div className="py-20 px-6 text-center">
+          <div className="max-w-2xl mx-auto">
+            <Button
+              onClick={handleEnterDestiny}
+              className="text-2xl px-16 py-8 bg-gradient-to-r from-red-600 via-amber-600 to-red-600 hover:from-red-700 hover:via-amber-700 hover:to-red-700 text-white border-2 border-amber-400 rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-105 mystical-glow font-serif"
+            >
+              <span className="mr-4">🔮</span>
+              Begin Your Destiny Journey
+              <span className="ml-4">🧭</span>
+            </Button>
+
+            <p className="text-amber-300 text-lg mt-6 opacity-80">
+              Between mountains and seas, dragons and tigers lie hidden. You too
+              shall find your place of belonging.
+            </p>
+
+            <div className="mt-8 text-amber-400/60 text-sm">
+              <p>
+                🔐 Want to save your destiny journey? Register an account after
+                completing your divination
               </p>
             </div>
           </div>
@@ -231,32 +257,6 @@ export default function LandingPage() {
                 between humans and nature, humans and destiny. Today, we use
                 technology to reinterpret this ancient wisdom, allowing everyone
                 to find their own &ldquo;Peach Blossom Spring.&rdquo;
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* 5. Enter Button */}
-        <div className="py-20 px-6 text-center">
-          <div className="max-w-2xl mx-auto">
-            <Button
-              onClick={handleEnterDestiny}
-              className="text-2xl px-16 py-8 bg-gradient-to-r from-red-600 via-amber-600 to-red-600 hover:from-red-700 hover:via-amber-700 hover:to-red-700 text-white border-2 border-amber-400 rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-105 mystical-glow font-serif"
-            >
-              <span className="mr-4">🔮</span>
-              Begin Your Destiny Journey
-              <span className="ml-4">🧭</span>
-            </Button>
-
-            <p className="text-amber-300 text-lg mt-6 opacity-80">
-              Between mountains and seas, dragons and tigers lie hidden. You too
-              shall find your place of belonging.
-            </p>
-
-            <div className="mt-8 text-amber-400/60 text-sm">
-              <p>
-                🔐 Want to save your destiny journey? Register an account after
-                completing your divination
               </p>
             </div>
           </div>

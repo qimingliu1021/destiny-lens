@@ -22,12 +22,6 @@ const Navbar: React.FC = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <Link
-              href="/coin-tossing"
-              className="text-amber-200 hover:text-amber-100 transition-colors duration-300 font-medium"
-            >
-              Start Divination
-            </Link>
-            <Link
               href="/blog"
               className="text-amber-200 hover:text-amber-100 transition-colors duration-300 font-medium"
             >
