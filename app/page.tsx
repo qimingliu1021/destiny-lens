@@ -1,322 +1,269 @@
 "use client";
 
-import { useState } from "react";
-import { InfoIcon } from "lucide-react";
-import RemotionPlayer from "@/components/RemotionPlayer";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
-const trigramMap: Record<
-  string,
-  { name: string; symbol: string; direction: string }
-> = {
-  "111": { name: "Qián", symbol: "☰", direction: "Northwest" },
-  "000": { name: "Kūn", symbol: "☷", direction: "Southwest" },
-  "011": { name: "Duì", symbol: "☱", direction: "West" },
-  "101": { name: "Lí", symbol: "☲", direction: "South" },
-  "001": { name: "Zhèn", symbol: "☳", direction: "East" },
-  "110": { name: "Xùn", symbol: "☴", direction: "Southeast" },
-  "010": { name: "Kǎn", symbol: "☵", direction: "North" },
-  "100": { name: "Gèn", symbol: "☶", direction: "Northeast" },
-};
+export default function LandingPage() {
+  const router = useRouter();
+  const [isVisible, setIsVisible] = useState(false);
 
-type FortuneCityResponse = {
-  selectedCity: string;
-  explanation: string;
-  fortune: string;
-  recommendedPlaces: { name: string; reason: string }[];
-  videoUrl?: string;
-};
+  useEffect(() => {
+    setIsVisible(true);
 
-type FortuneLifeResponse = {
-  hexagram: string;
-  description: string;
-  personalTraits?: string;
-  currentPhase?: string;
-  careerGuidance?: string;
-  relationshipGuidance?: string;
-  growthRecommendations?: string[];
-  timing?: string;
-  error?: string;
-  rawResponse?: string;
-};
+    // Create floating bagua symbols
+    const createBaguaParticle = () => {
+      const symbols = ["☰", "☷", "☳", "☴", "☵", "☶", "☱", "☲"];
+      const particle = document.createElement("div");
+      particle.className = "bagua-particle";
+      particle.textContent = symbols[(Math.random() * symbols.length) | 0];
+      particle.style.left = Math.random() * 100 + "%";
+      particle.style.animationDuration = Math.random() * 15 + 10 + "s";
+      particle.style.animationDelay = Math.random() * 5 + "s";
+      particle.style.fontSize = Math.random() * 20 + 20 + "px";
+      particle.style.opacity = `${Math.random() * 0.3 + 0.1}`;
 
-interface HexagramData {
-  hexFont: string;
-  english: string;
-  pinyin: string;
-  number: string;
-}
+      const particlesContainer = document.querySelector(".bagua-particles");
+      if (particlesContainer) {
+        particlesContainer.appendChild(particle);
 
-const getHexagramDirections = (hexagram: string[]): string => {
-  if (hexagram.length !== 6) return "Unknown";
-  const binary = hexagram.map((l) => (l === "yang" ? "1" : "0"));
-  const lower = binary.slice(0, 3).reverse().join("");
-  const upper = binary.slice(3, 6).reverse().join("");
-  const lowerTrigram = trigramMap[lower];
-  const upperTrigram = trigramMap[upper];
-
-  if (!lowerTrigram || !upperTrigram) return "Direction unknown";
-  return `Lower Trigram: ${lowerTrigram.symbol} (${lowerTrigram.name}) → ${lowerTrigram.direction}\nUpper Trigram: ${upperTrigram.symbol} (${upperTrigram.name}) → ${upperTrigram.direction}`;
-};
-
-export default function HomePage() {
-  const [hexagram, setHexagram] = useState<string[]>([]);
-  const [fortuneCity, setFortuneCity] = useState<FortuneCityResponse | null>(
-    null
-  );
-  const [fortuneLife, setFortuneLife] = useState<FortuneLifeResponse | null>(
-    null
-  );
-  const [loading, setLoading] = useState(false);
-  const [hexagramData, setHexagramData] = useState<HexagramData | null>(null);
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [showLines, setShowLines] = useState(false);
-
-  const renderCoin = (line: string, index: number) => (
-    <div
-      key={index}
-      className={`relative w-12 h-12 rounded-full shadow-md text-xl font-bold transition-all duration-700 flex items-center justify-center ${
-        loading
-          ? "bg-gray-300 animate-spin-slow"
-          : `${
-              line === "yang"
-                ? "bg-yellow-400 text-black"
-                : "bg-purple-500 text-white"
-            } animate-bounce-slight`
-      }`}
-      style={{ animationDelay: `${index * 100}ms` }}
-    >
-      {loading && (
-        <span className="absolute inset-0 flex items-center justify-center text-2xl">
-          🪙
-        </span>
-      )}
-      {!loading && (line === "yang" ? "⚊" : "⚋")}
-    </div>
-  );
-
-  const flipCoins = async () => {
-    setFortuneCity(null);
-    setFortuneLife(null);
-    setImageUrls([]);
-    setLoading(true);
-    setHexagramData(null);
-    setShowLines(false);
-
-    const newHexagram = Array.from({ length: 6 }, () =>
-      Math.random() < 0.5 ? "yin" : "yang"
-    );
-    console.log("newHexagram", newHexagram);
-    setHexagram(newHexagram);
-
-    const binary = newHexagram.map((l) => (l === "yang" ? "1" : "0")).join("");
-
-    try {
-      // Call all APIs including image fetching
-      const [cityResponse, lifeResponse, hexagramResponse] = await Promise.all([
-        fetch("/api/fortune-city", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ binary }),
-        }),
-        fetch("/api/fortune-life", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ binary }),
-        }),
-        fetch("/api/hexagram-data", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ binary }),
-        }),
-      ]);
-
-      if (cityResponse.ok && lifeResponse.ok && hexagramResponse.ok) {
-        const cityData = await cityResponse.json();
-        const lifeData = await lifeResponse.json();
-        const hexagramCsvData = await hexagramResponse.json();
-
-        setFortuneCity(cityData);
-        setFortuneLife(lifeData);
-        setHexagramData(hexagramCsvData);
-
-        // Fetch images after getting city data
-        const imageResponse = await fetch("/api/image-fetching", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ binary }),
-        });
-
-        if (imageResponse.ok) {
-          const imageData = await imageResponse.json();
-          setImageUrls(imageData.imageUrls || []);
-          console.log("🖼️ Image URLs ready:", imageData.imageUrls);
-        }
+        setTimeout(() => {
+          particle.remove();
+        }, 20000);
       }
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    const interval = setInterval(createBaguaParticle, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleEnterDestiny = () => {
+    router.push("/coin-tossing");
   };
 
   return (
-    <div className="flex-1 w-full flex flex-col items-center gap-8 p-8">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
-          Destiny Lens
-        </h1>
-        <p className="text-xl text-muted-foreground">
-          Your personal Yijing fortune teller
-        </p>
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-amber-900 to-red-900">
+      {/* Floating Bagua Particles */}
+      <div className="bagua-particles absolute inset-0 z-0 pointer-events-none"></div>
+
+      {/* Background Elements */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-1/3 left-0 w-64 h-64 bg-gradient-to-r from-amber-500/20 to-transparent rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/3 right-0 w-64 h-64 bg-gradient-to-l from-red-500/20 to-transparent rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-amber-500/10 via-red-500/10 to-amber-500/10 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="bg-accent text-sm p-3 px-5 rounded-md text-foreground flex gap-3 items-center">
-        <InfoIcon size={16} strokeWidth={2} />
-        Welcome to Destiny Lens – discover your destiny through ancient Chinese
-        wisdom.
-      </div>
-
-      {/* Main Fortune Section */}
-      <div className="w-full max-w-md mx-auto bg-background rounded-lg border p-6 shadow">
-        <h2 className="text-xl font-bold mb-4">Your Destiny Hexagram</h2>
-        <button
-          onClick={flipCoins}
-          className="mb-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white px-5 py-2 rounded-xl shadow-lg shadow-purple-500/40 hover:shadow-pink-500/50 transition-all duration-300 ease-in-out font-semibold tracking-wider"
-          disabled={loading}
+      <div className="relative z-10">
+        {/* 1. Opening Poetic Title + Call to Action */}
+        <div
+          className={`min-h-screen flex flex-col items-center justify-center px-6 text-center transition-all duration-1000 ${
+            isVisible ? "fade-in-up" : "opacity-0"
+          }`}
         >
-          {loading ? "Consulting the Yijing..." : "Flip the Coins of Fate"}
-        </button>
+          <div className="max-w-5xl mx-auto">
+            <h1 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 mb-8 shimmer-text">
+              Destiny Lens
+            </h1>
 
-        {/* Hexagram Display */}
-        {hexagramData && (
-          <div className="text-center p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg mb-6">
-            <div
-              className="mb-4 font-serif leading-none"
-              style={{ fontSize: "150px" }}
-            >
-              {hexagramData.hexFont}
+            <div className="text-3xl md:text-4xl font-serif text-amber-200 mb-6">
+              Classic of Mountains and Seas
             </div>
 
-            <h3 className="text-xl font-semibold text-purple-700">
-              {hexagramData.english}
-            </h3>
+            <div className="w-32 h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mb-8"></div>
 
-            <p className="text-sm text-purple-600 mt-2">
-              {hexagramData.pinyin} • Hexagram {hexagramData.number}
+            <blockquote className="text-2xl md:text-3xl font-serif text-amber-100 italic leading-relaxed mb-6 ancient-runes">
+              &ldquo;In this vast world, there are countless wonders.
+              <br />
+              Between mountains and seas, dragons and tigers lie hidden.&rdquo;
+            </blockquote>
+
+            <p className="text-xl text-amber-200 mb-8 leading-relaxed">
+              Cast the coins of fate and embark on your journey to belonging
             </p>
-          </div>
-        )}
 
-        {/* Hexagram Coins */}
-        {hexagram.length > 0 && (
-          <div className="text-center mb-6">
-            <div className="grid grid-cols-6 gap-2 justify-center mb-4">
-              {hexagram.map((line, index) => renderCoin(line, index))}
-            </div>
-
-            <button
-              onClick={() => setShowLines(!showLines)}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {showLines ? "Hide" : "Show"} Trigram Details
-            </button>
-
-            {showLines && (
-              <div className="mt-4 p-3 bg-muted rounded text-xs whitespace-pre-line">
-                {getHexagramDirections(hexagram)}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Fortune Results */}
-      {fortuneCity && fortuneLife && (
-        <div className="w-full max-w-4xl space-y-8">
-          {/* City Fortune */}
-          <div className="bg-background rounded-lg border p-6">
-            <h3 className="text-lg font-semibold text-center mb-4">
-              ✨ City Recommendation: {fortuneCity.selectedCity}
-            </h3>
-            <p className="text-sm text-muted-foreground whitespace-pre-line mb-4">
-              {fortuneCity.explanation}
-            </p>
-            <ul className="space-y-3 text-sm">
-              {fortuneCity.recommendedPlaces?.map((place, idx) => (
-                <li key={idx} className="border-l-4 border-purple-400 pl-3">
-                  <strong>{place.name}:</strong> {place.reason}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Life Analysis */}
-          <div className="bg-background rounded-lg border p-6">
-            <h3 className="text-lg font-semibold text-center mb-4">
-              🔮 Personal Life Analysis
-            </h3>
-            <div className="space-y-4 text-sm">
-              {fortuneLife.personalTraits && (
-                <div>
-                  <h4 className="font-semibold text-purple-700">
-                    Personal Traits:
-                  </h4>
-                  <p className="whitespace-pre-line">
-                    {fortuneLife.personalTraits}
-                  </p>
-                </div>
-              )}
-              {fortuneLife.currentPhase && (
-                <div>
-                  <h4 className="font-semibold text-purple-700">
-                    Current Life Phase:
-                  </h4>
-                  <p className="whitespace-pre-line">
-                    {fortuneLife.currentPhase}
-                  </p>
-                </div>
-              )}
-              {fortuneLife.careerGuidance && (
-                <div>
-                  <h4 className="font-semibold text-purple-700">
-                    Career Guidance:
-                  </h4>
-                  <p className="whitespace-pre-line">
-                    {fortuneLife.careerGuidance}
-                  </p>
-                </div>
-              )}
-              {fortuneLife.relationshipGuidance && (
-                <div>
-                  <h4 className="font-semibold text-purple-700">
-                    Relationship Guidance:
-                  </h4>
-                  <p className="whitespace-pre-line">
-                    {fortuneLife.relationshipGuidance}
-                  </p>
-                </div>
-              )}
-              {fortuneLife.timing && (
-                <div>
-                  <h4 className="font-semibold text-purple-700">Timing:</h4>
-                  <p className="whitespace-pre-line">{fortuneLife.timing}</p>
-                </div>
-              )}
+            <div className="text-center mb-16">
+              <p className="text-lg text-amber-300 max-w-3xl mx-auto leading-relaxed mb-8">
+                Perhaps you&rsquo;re still wandering: Where to go? Where to
+                stay?
+                <br />
+                Instead of endless contemplation, let destiny provide the
+                answer.
+              </p>
+              <p className="text-base text-amber-200 max-w-4xl mx-auto leading-relaxed">
+                We combine the wisdom of I Ching with modern city data to divine
+                your current state of mind and future path.
+                <br />
+                Through ancient coins, your voice, and your face, we generate
+                your personal destiny poem and city of belonging.
+              </p>
             </div>
           </div>
-
-          {/* Video Player */}
-          {imageUrls.length > 0 && (
-            <div className="bg-background rounded-lg border p-6">
-              <h3 className="text-lg font-semibold text-center mb-4">
-                🎥 Your Destiny Journey Video
-              </h3>
-              <RemotionPlayer imageUrls={imageUrls} />
-            </div>
-          )}
         </div>
-      )}
+
+        {/* 2. Feature Description */}
+        <div className="py-20 px-6 bg-gradient-to-b from-transparent to-black/20">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-4xl font-serif text-amber-300 text-center mb-16">
+              The Journey of Destiny
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {[
+                {
+                  step: "01",
+                  icon: "🪙",
+                  title: "Cast Ancient Coins",
+                  desc: "Six bronze coins fall to form hexagrams\nGenerate your primary and changing trigrams\nInterpret the symbols of heaven, earth, and humanity",
+                  color: "from-amber-600 to-yellow-600",
+                },
+                {
+                  step: "02",
+                  icon: "🎭",
+                  title: "Emotion & Personality Analysis",
+                  desc: "Capture facial expression details\nAnalyze vocal emotional characteristics\nSense your inner spiritual state",
+                  color: "from-red-600 to-orange-600",
+                },
+                {
+                  step: "03",
+                  icon: "🗺️",
+                  title: "City Destiny Matching",
+                  desc: "Combine hexagrams with personality\nAI algorithms for precise divination\nFind your city of belonging",
+                  color: "from-purple-600 to-pink-600",
+                },
+                {
+                  step: "04",
+                  icon: "🎬",
+                  title: "Destiny Video Creation",
+                  desc: "AI composes exclusive poetry\nSynthesize city landscape imagery\nRecord your destiny trajectory",
+                  color: "from-emerald-600 to-teal-600",
+                },
+              ].map((item, index) => (
+                <div
+                  key={index}
+                  className="bg-black/30 backdrop-blur-sm rounded-xl border border-amber-500/30 p-6 text-center mystical-glow"
+                  style={{ animationDelay: `${index * 0.2}s` }}
+                >
+                  <div
+                    className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r ${item.color} flex items-center justify-center text-2xl`}
+                  >
+                    {item.icon}
+                  </div>
+                  <div className="text-amber-400 text-sm font-mono mb-2">
+                    {item.step}
+                  </div>
+                  <h3 className="text-amber-200 font-serif text-lg mb-3">
+                    {item.title}
+                  </h3>
+                  <p className="text-amber-300 text-sm whitespace-pre-line leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Destiny Example */}
+        <div className="py-20 px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-4xl font-serif text-amber-300 mb-12">
+              Real Destiny Trajectory
+            </h2>
+
+            <div className="bg-gradient-to-r from-red-900/40 to-amber-900/40 backdrop-blur-sm rounded-2xl border border-amber-500/30 p-8 mb-8">
+              <div className="text-6xl mb-6">🌟</div>
+              <h3 className="text-2xl text-amber-200 font-serif mb-4">
+                Sarah&rsquo;s Journey of Destiny
+              </h3>
+              <p className="text-amber-300 leading-relaxed mb-6">
+                Originally residing in Beijing, Sarah received guidance from the
+                &ldquo;Thunder Wind Constancy&rdquo; hexagram during her destiny
+                reading&mdash; symbolizing enduring rhythm and distant journeys.
+                The AI recommended Portland, a city where nature and art
+                intertwine.
+              </p>
+              <p className="text-amber-200 italic">
+                &ldquo;When I finally stepped into this city, I discovered that
+                the morning mist was like the Water trigram, the lights in the
+                coffee shop windows like the Fire trigram, and the street music
+                seemed to thunder endlessly. I finally found my own
+                rhythm.&rdquo;
+              </p>
+
+              <div className="mt-8 p-4 bg-black/20 rounded-lg">
+                <div className="text-amber-400 text-sm mb-2">
+                  Generated Destiny Poem Excerpt:
+                </div>
+                <div className="text-amber-200 font-serif italic">
+                  &ldquo;Thunder moves, wind follows the eternal way,
+                  <br />
+                  Westward ten thousand miles seeking kindred souls.
+                  <br />
+                  In Portland finding the place of return,
+                  <br />
+                  In coffee&rsquo;s fragrance, understanding life.&rdquo;
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Project Philosophy */}
+        <div className="py-20 px-6 bg-gradient-to-b from-transparent to-black/30">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-4xl font-serif text-amber-300 mb-12">
+              Philosophy & Vision
+            </h2>
+
+            <div className="space-y-8">
+              <blockquote className="text-xl text-amber-200 italic leading-relaxed">
+                &ldquo;It&rsquo;s not that there&rsquo;s something wrong with
+                where you are, but whether you are truly understood.&rdquo;
+              </blockquote>
+
+              <p className="text-lg text-amber-300 leading-relaxed">
+                Every person has a city that belongs to them, just as every soul
+                has a corresponding constellation. Modern confusion often stems
+                not from lack of opportunity, but from not yet finding an
+                environment that truly understands oneself.
+              </p>
+
+              <p className="text-base text-amber-200 leading-relaxed">
+                The Classic of Mountains and Seas recorded ancient dialogues
+                between humans and nature, humans and destiny. Today, we use
+                technology to reinterpret this ancient wisdom, allowing everyone
+                to find their own &ldquo;Peach Blossom Spring.&rdquo;
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* 5. Enter Button */}
+        <div className="py-20 px-6 text-center">
+          <div className="max-w-2xl mx-auto">
+            <Button
+              onClick={handleEnterDestiny}
+              className="text-2xl px-16 py-8 bg-gradient-to-r from-red-600 via-amber-600 to-red-600 hover:from-red-700 hover:via-amber-700 hover:to-red-700 text-white border-2 border-amber-400 rounded-2xl shadow-2xl transform transition-all duration-300 hover:scale-105 mystical-glow font-serif"
+            >
+              <span className="mr-4">🔮</span>
+              Begin Your Destiny Journey
+              <span className="ml-4">🧭</span>
+            </Button>
+
+            <p className="text-amber-300 text-lg mt-6 opacity-80">
+              Between mountains and seas, dragons and tigers lie hidden. You too
+              shall find your place of belonging.
+            </p>
+
+            <div className="mt-8 text-amber-400/60 text-sm">
+              <p>
+                🔐 Want to save your destiny journey? Register an account after
+                completing your divination
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
