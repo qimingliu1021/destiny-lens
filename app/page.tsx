@@ -69,8 +69,6 @@ export default function LandingPage() {
               Classic of Mountains and Seas
             </div>
 
-            <div className="w-32 h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent mx-auto mb-8"></div>
-
             <blockquote className="text-2xl md:text-3xl font-serif text-amber-100 italic leading-relaxed mb-6 ancient-runes">
               &ldquo;In this vast world, there are countless wonders.
               <br />
@@ -81,7 +79,7 @@ export default function LandingPage() {
               Cast the coins of fate and embark on your journey to belonging
             </p>
 
-            <div className="text-center mb-16">
+            <div className="text-center">
               <p className="text-lg text-amber-300 max-w-3xl mx-auto leading-relaxed mb-8">
                 Perhaps you&rsquo;re still wandering: Where to go? Where to
                 stay?
@@ -101,7 +99,7 @@ export default function LandingPage() {
         </div>
 
         {/* 2. Feature Description */}
-        <div className="py-20 px-6 bg-gradient-to-b from-transparent to-black/20">
+        <div className="px-6 -mt-16">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-4xl font-serif text-amber-300 text-center mb-16">
               The Journey of Destiny
