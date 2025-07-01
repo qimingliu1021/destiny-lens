@@ -40,6 +40,7 @@ export default function CoinTossingPage() {
   const [fortuneLife, setFortuneLife] = useState<FortuneLifeResponse | null>(
     null
   );
+  console.log(fortuneLife);
   const [loading, setLoading] = useState(false);
   const [hexagramData, setHexagramData] = useState<HexagramData | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
