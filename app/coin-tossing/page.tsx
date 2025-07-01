@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { InfoIcon, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
@@ -10,19 +10,6 @@ type FortuneCityResponse = {
   fortune: string;
   recommendedPlaces: { name: string; reason: string }[];
   videoUrl?: string;
-};
-
-type FortuneLifeResponse = {
-  hexagram: string;
-  description: string;
-  personalTraits?: string;
-  currentPhase?: string;
-  careerGuidance?: string;
-  relationshipGuidance?: string;
-  growthRecommendations?: string[];
-  timing?: string;
-  error?: string;
-  rawResponse?: string;
 };
 
 interface HexagramData {
@@ -37,10 +24,6 @@ export default function CoinTossingPage() {
   const [fortuneCity, setFortuneCity] = useState<FortuneCityResponse | null>(
     null
   );
-  const [fortuneLife, setFortuneLife] = useState<FortuneLifeResponse | null>(
-    null
-  );
-  console.log(fortuneLife);
   const [loading, setLoading] = useState(false);
   const [hexagramData, setHexagramData] = useState<HexagramData | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -71,10 +54,9 @@ export default function CoinTossingPage() {
 
   const flipCoins = async () => {
     setFortuneCity(null);
-    setFortuneLife(null);
+    setHexagramData(null);
     setImageUrls([]);
     setLoading(true);
-    setHexagramData(null);
     setReadingComplete(false);
 
     const newHexagram = Array.from({ length: 6 }, () =>
@@ -87,13 +69,8 @@ export default function CoinTossingPage() {
 
     try {
       // Call all APIs including image fetching
-      const [cityResponse, lifeResponse, hexagramResponse] = await Promise.all([
+      const [cityResponse, hexagramResponse] = await Promise.all([
         fetch("/api/fortune-city", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ binary }),
-        }),
-        fetch("/api/fortune-life", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ binary }),
@@ -105,20 +82,19 @@ export default function CoinTossingPage() {
         }),
       ]);
 
-      if (cityResponse.ok && lifeResponse.ok && hexagramResponse.ok) {
+      if (cityResponse.ok && hexagramResponse.ok) {
         const cityData = await cityResponse.json();
-        const lifeData = await lifeResponse.json();
         const hexagramCsvData = await hexagramResponse.json();
 
         setFortuneCity(cityData);
-        setFortuneLife(lifeData);
         setHexagramData(hexagramCsvData);
 
         // Store in localStorage for other pages
-        localStorage.setItem("currentHexagram", JSON.stringify(newHexagram));
-        localStorage.setItem("fortuneCity", JSON.stringify(cityData));
-        localStorage.setItem("fortuneLife", JSON.stringify(lifeData));
-        localStorage.setItem("hexagramData", JSON.stringify(hexagramCsvData));
+        if (typeof window !== "undefined") {
+          localStorage.setItem("currentHexagram", JSON.stringify(newHexagram));
+          localStorage.setItem("fortuneCity", JSON.stringify(cityData));
+          localStorage.setItem("hexagramData", JSON.stringify(hexagramCsvData));
+        }
 
         // Fetch images after getting data
         const imageResponse = await fetch("/api/image-fetching", {
@@ -130,10 +106,12 @@ export default function CoinTossingPage() {
         if (imageResponse.ok) {
           const imageData = await imageResponse.json();
           setImageUrls(imageData.imageUrls || []);
-          localStorage.setItem(
-            "imageUrls",
-            JSON.stringify(imageData.imageUrls || [])
-          );
+          if (typeof window !== "undefined") {
+            localStorage.setItem(
+              "imageUrls",
+              JSON.stringify(imageData.imageUrls || [])
+            );
+          }
           console.log("🖼️ Image URLs ready:", imageData.imageUrls);
         }
 
@@ -145,6 +123,17 @@ export default function CoinTossingPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Check if we're in the browser before accessing localStorage
+    if (typeof window !== "undefined") {
+      const storedHexagramData = localStorage.getItem("hexagramData");
+
+      if (storedHexagramData) {
+        setHexagramData(JSON.parse(storedHexagramData));
+      }
+    }
+  }, []);
 
   return (
     <div className="flex-1 w-full flex flex-col items-center gap-8 p-8">
