@@ -19,15 +19,24 @@ interface HexagramData {
   number: string;
 }
 
+interface LocationData {
+  city: string;
+  state: string;
+  latitude: number;
+  longitude: number;
+}
+
 export default function CoinTossingPage() {
   const [hexagram, setHexagram] = useState<string[]>([]);
   const [fortuneCity, setFortuneCity] = useState<FortuneCityResponse | null>(
     null
   );
+  const [fortuneLife, setFortuneLife] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [hexagramData, setHexagramData] = useState<HexagramData | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [readingComplete, setReadingComplete] = useState(false);
+  const [userLocation, setUserLocation] = useState<LocationData | null>(null);
 
   const renderCoin = (line: string, index: number) => (
     <div
@@ -54,9 +63,10 @@ export default function CoinTossingPage() {
 
   const flipCoins = async () => {
     setFortuneCity(null);
-    setHexagramData(null);
+    setFortuneLife(null);
     setImageUrls([]);
     setLoading(true);
+    setHexagramData(null);
     setReadingComplete(false);
 
     const newHexagram = Array.from({ length: 6 }, () =>
@@ -68,12 +78,34 @@ export default function CoinTossingPage() {
     const binary = newHexagram.map((l) => (l === "yang" ? "1" : "0")).join("");
 
     try {
-      // Call all APIs including image fetching
-      const [cityResponse, hexagramResponse] = await Promise.all([
+      // Get user location first
+      const location = await getUserLocation();
+      setUserLocation(location);
+      console.log("User location:", location);
+
+      // Call all APIs with location data
+      const [cityResponse, lifeResponse, hexagramResponse] = await Promise.all([
         fetch("/api/fortune-city", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ binary }),
+          body: JSON.stringify({
+            binary,
+            userCity: location.city,
+            userState: location.state,
+            latitude: location.latitude,
+            longitude: location.longitude,
+          }),
+        }),
+        fetch("/api/fortune-life", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            binary,
+            userCity: location.city,
+            userState: location.state,
+            latitude: location.latitude,
+            longitude: location.longitude,
+          }),
         }),
         fetch("/api/hexagram-data", {
           method: "POST",
@@ -82,18 +114,22 @@ export default function CoinTossingPage() {
         }),
       ]);
 
-      if (cityResponse.ok && hexagramResponse.ok) {
+      if (cityResponse.ok && lifeResponse.ok && hexagramResponse.ok) {
         const cityData = await cityResponse.json();
+        const lifeData = await lifeResponse.json();
         const hexagramCsvData = await hexagramResponse.json();
 
         setFortuneCity(cityData);
+        setFortuneLife(lifeData);
         setHexagramData(hexagramCsvData);
 
         // Store in localStorage for other pages
         if (typeof window !== "undefined") {
           localStorage.setItem("currentHexagram", JSON.stringify(newHexagram));
           localStorage.setItem("fortuneCity", JSON.stringify(cityData));
+          localStorage.setItem("fortuneLife", JSON.stringify(lifeData));
           localStorage.setItem("hexagramData", JSON.stringify(hexagramCsvData));
+          localStorage.setItem("userLocation", JSON.stringify(location));
         }
 
         // Fetch images after getting data
@@ -135,13 +171,81 @@ export default function CoinTossingPage() {
     }
   }, []);
 
+  const getUserLocation = async (): Promise<LocationData> => {
+    return new Promise((resolve) => {
+      // First try browser geolocation (most accurate)
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+
+            // Get city/state from coordinates using free reverse geocoding
+            try {
+              const response = await fetch(
+                `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+              );
+              const data = await response.json();
+
+              resolve({
+                city: data.city || data.locality || "Unknown",
+                state: data.principalSubdivision || "Unknown",
+                latitude,
+                longitude,
+              });
+            } catch (error) {
+              console.error("Reverse geocoding failed:", error);
+              // Fallback to IP location
+              getIPLocation().then(resolve);
+            }
+          },
+          () => {
+            // User denied geolocation, fallback to IP location
+            getIPLocation().then(resolve);
+          },
+          { timeout: 10000 }
+        );
+      } else {
+        // Browser doesn't support geolocation
+        getIPLocation().then(resolve);
+      }
+    });
+  };
+
+  const getIPLocation = async (): Promise<LocationData> => {
+    try {
+      // Using ipapi.co (free tier: 1000 requests/day)
+      const response = await fetch("https://ipapi.co/json/");
+      const data = await response.json();
+
+      return {
+        city: data.city || "Unknown",
+        state: data.region || "Unknown",
+        latitude: data.latitude || 0,
+        longitude: data.longitude || 0,
+      };
+    } catch (error) {
+      console.error("IP location failed:", error);
+      // Final fallback
+      return {
+        city: "Unknown",
+        state: "Unknown",
+        latitude: 0,
+        longitude: 0,
+      };
+    }
+  };
+
   return (
     <div className="flex-1 w-full flex flex-col items-center gap-8 p-8">
       <div className="bg-accent text-sm p-3 px-5 rounded-md text-foreground flex gap-3 items-center">
         <InfoIcon size={16} strokeWidth={2} />
         Welcome to Destiny Lens – your personal Yijing fortune teller.
       </div>
-
+      {userLocation && (
+        <div className="text-center text-sm text-gray-600 mb-4">
+          📍 Reading for: {userLocation.city}, {userLocation.state}
+        </div>
+      )}
       <div className="mt-8">
         <h3 className="text-lg font-semibold mb-4 text-center">
           Your Destiny Journey

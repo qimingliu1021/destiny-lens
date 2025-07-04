@@ -1,4 +1,3 @@
-// components/RemotionPlayer.tsx
 "use client";
 import { Player } from "@remotion/player";
 import { Slideshow } from "../app/remotion/Slideshow";
