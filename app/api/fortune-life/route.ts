@@ -16,14 +16,15 @@ interface HexagramRecord {
 interface FortuneLifeResponse {
   hexagram: string;
   description: string;
-  citySupport?: string; // How the city supports/hinders growth
-  locationAlignment?: string; // Whether location aligns with Yin-Yang/Trigram forces
-  suitableCityTypes?: string; // What kinds of cities might suit them
-  recommendedCity?: string; // The 1 recommended U.S. city with reasoning
-  personalTraits?: string; // Personal analysis fields
-  careerGuidance?: string;
-  relationshipGuidance?: string;
-  currentLifePhase?: string;
+  personalTraits?: string;
+  struggles?: string;
+  currentCityImpact?: string;
+  destinationCityTraits?: string;
+  directionalGuidance?: {
+    direction: string;
+    meaning: string;
+    recommendedCities: string[];
+  };
   error?: string;
   rawResponse?: string;
 }
@@ -94,6 +95,22 @@ export async function POST(req: NextRequest) {
 
     const title = match.english;
     const description = match.symbolic;
+    const summary_initial = match.image;
+    const gua_meaning = match.judgement;
+    // {'1': {'text': '...', 'comments': '...'}, '2': {'text': '...', 'comments': '...'}, ...}
+    // Needs for loop to get it one by one.
+    const yao_meaning = match.lines;
+    // console.log("yao_meaning:\n", yao_meaning);
+
+    let parsedYaoMeaning;
+    try {
+      // Use the more robust parsing function
+      parsedYaoMeaning = parsePythonDict(yao_meaning);
+      // console.log("Successfully parsed yao_meaning:", parsedYaoMeaning);
+    } catch (error) {
+      console.error("Error parsing yao_meaning:", error);
+      parsedYaoMeaning = {};
+    }
 
     // Generate line interpretations
     const lineDescriptions = [
@@ -105,37 +122,71 @@ export async function POST(req: NextRequest) {
       "Line 6 (Completion): End of cycle; transcendence or decay.",
     ];
 
-    const linesWithMeaning = reversedBinary
-      .split("")
-      .map(
-        (bit, i) =>
-          `${lineDescriptions[i]} → ${
-            bit === "1" ? "Yang (solid)" : "Yin (broken)"
-          }`
-      )
-      .join("\n");
+    const enhancedLineDescriptions = [];
+    for (let i = 0; i < lineDescriptions.length; i++) {
+      const lineNumber = (i + 1).toString(); // Convert to string since JSON keys are strings
+      const baseDescription = lineDescriptions[i];
 
-    // Create location context
-    const locationContext =
-      latitude && longitude
-        ? `at coordinates ${latitude}, ${longitude}`
-        : "location not specified";
+      // Get the yao meaning for this line
+      const yaoData = parsedYaoMeaning[lineNumber];
+
+      // console.log("yaoData:\n", yaoData);
+
+      if (yaoData && yaoData.text && yaoData.comments) {
+        // Add the original text and comments
+        const enhancedDescription = `${baseDescription} Original text: "${yaoData.text}", it means: ${yaoData.comments}`;
+        // console.log("enhancedDescription:\n", enhancedDescription);
+        enhancedLineDescriptions.push(enhancedDescription);
+      } else {
+        // If no yao meaning found, use the base description
+        // console.log(`No yao data found for line ${lineNumber}`);
+        enhancedLineDescriptions.push(baseDescription);
+      }
+    }
 
     // Enhanced Claude prompt
-    const prompt = `A user in ${userCity}, ${userState} has drawn Hexagram ${title} (${description}).
-    Their current geolocation is: ${latitude}, ${longitude}.
-    
-    Their hexagram lines are interpreted as:
-    ${linesWithMeaning}
-    
-    Please analyze the user's **current life** in relation to their **physical environment** and city context.
-    
-    Respond in JSON with the following:
-    - How the city they're in is supporting or hindering their personal growth
-    - Whether their location aligns with their Yin-Yang and Trigram forces
-    - What kinds of cities (nature-rich, fast-paced, intellectual, spiritual, etc.) might better suit them
-    - Recommend 1 real U.S. cities with poetic but concrete reasoning (e.g., 'Seattle awakens your water energy while grounding your fire ambitions.')
-    - Include the rest of the personal analysis fields (traits, career, etc.) in light of this context`;
+    const prompt = `You are a master of the I Ching, especially skilled in interpreting trigrams through the classical Chinese text 《高岛易断》 by 高岛吞象. You act as a fortune teller who reveals hidden truths in a user's life through symbolic reasoning and spiritual insight. You are also able to connect the divination results with real-world factors, such as geography and city environment.
+
+A user from ${userCity}, ${userState} has drawn Hexagram ${title} (${description}), located at coordinates: ${latitude}, ${longitude}.
+
+This hexagram (卦象) consists of the following:
+- Summary of the image: ${summary_initial}
+- Meaning or judgment of the hexagram (卦辞): ${gua_meaning}
+- Interpretation of each line (爻辞):
+${enhancedLineDescriptions}
+
+Please fulfill the following tasks based on the above I Ching data:
+
+1. **Personal Traits and Internal Struggles**  
+   - Based on the **hexagram meaning**, **line interpretations**, and **symbolic image**, infer the user's **personality, mindset, and inner emotional state**.  
+   - Reflect on what kind of psychological phase they are in. Are they experiencing stagnation, breakthrough, confusion, or imbalance?
+   - Highlight **invisible causes of their struggles** that are reflected metaphorically in the gua.
+
+2. **Analysis of Current City**  
+   - Considering the user's **current physical location and coordinates**, evaluate whether this environment **supports or hinders** their spiritual and personal growth.  
+   - Pay attention to aspects like **cultural energy**, **pace of life**, **social energy**, or **elemental mismatch** (e.g., a water person trapped in a fire city).
+
+3. **Traits of Ideal Destination City**  
+   - If the hexagram implies the user should relocate, or that their current place is unsuitable, deduce the qualities of a city that would **restore balance and growth** for them.  
+   - Use traits like: quiet, fast-paced, nature-rich, ocean-close, intellectually vibrant, historically rooted, etc.
+
+4. **Direction Guidance using 后天八卦 (Later Heaven Trigram Theory)**  
+   - Analyze the **symbolic direction** of the user's growth using **trigram placement** and the hexagram structure.  
+   - Suggest a **cardinal direction** (e.g., East, Southeast, Northwest) and explain it metaphorically and spiritually.  
+   - Then, based on this direction, hint at one or two **real U.S. cities** that represent this destiny path. Describe how they metaphorically and practically align with the user's fate.
+
+Respond strictly in **JSON** format with these fields:
+{
+  "personalTraits": "Summary of personality, strengths, psychological phase, and internal conflicts.",
+  "struggles": "Underlying issues the user may not be aware of, based on the hexagram.",
+  "currentCityImpact": "How the current city is affecting their energy, growth, and direction.",
+  "destinationCityTraits": "Qualities an ideal city should have to nurture the user.",
+  "directionalGuidance": {
+    "direction": "East/Southwest/North/etc.",
+    "meaning": "What this direction symbolizes spiritually for the user",
+    "recommendedCities": ["City Name 1", "City Name 2"]
+  }
+}`;
 
     // Call Claude API
     const claudeResponse = await fetch(ANTHROPIC_API_URL, {
@@ -159,6 +210,7 @@ export async function POST(req: NextRequest) {
 
     const result = await claudeResponse.json();
     const responseText = result?.content?.[0]?.text || "";
+    console.log("responseText:\n", responseText);
 
     if (!responseText) {
       throw new Error("Empty response from Claude API");
@@ -168,12 +220,43 @@ export async function POST(req: NextRequest) {
     let parsedAnalysis;
     try {
       // Clean the response text (remove any markdown formatting)
-      const cleanedText = responseText
+      let cleanedText = responseText
         .replace(/```json\n?/g, "")
         .replace(/```\n?/g, "")
         .trim();
 
+      const jsonStart = cleanedText.search(/^\s*[\{\[]/);
+      if (jsonStart > 0) {
+        cleanedText = cleanedText.substring(jsonStart);
+      }
+
+      // Alternative: Look for the first { or [ character
+      const firstBrace = cleanedText.indexOf("{");
+      const firstBracket = cleanedText.indexOf("[");
+
+      if (firstBrace !== -1 || firstBracket !== -1) {
+        const jsonStartIndex =
+          firstBrace !== -1 && firstBracket !== -1
+            ? Math.min(firstBrace, firstBracket)
+            : Math.max(firstBrace, firstBracket);
+
+        if (jsonStartIndex > 0) {
+          cleanedText = cleanedText.substring(jsonStartIndex);
+        }
+      }
+
+      // Find the last } or ] to ensure we capture the complete JSON
+      const lastBrace = cleanedText.lastIndexOf("}");
+      const lastBracket = cleanedText.lastIndexOf("]");
+
+      if (lastBrace !== -1 || lastBracket !== -1) {
+        const jsonEndIndex = Math.max(lastBrace, lastBracket);
+        cleanedText = cleanedText.substring(0, jsonEndIndex + 1);
+      }
+
+      // console.log("Cleaned JSON text:", cleanedText);
       parsedAnalysis = JSON.parse(cleanedText);
+      console.log("parsedAnalysis:", parsedAnalysis);
     } catch (jsonError) {
       console.error("JSON parse error:", jsonError);
       console.error("Raw response:", responseText);
@@ -188,10 +271,8 @@ export async function POST(req: NextRequest) {
         locationAlignment:
           "Location alignment analysis temporarily unavailable.",
         suitableCityTypes: "Suitable city analysis temporarily unavailable.",
-        recommendedCity: "City recommendation temporarily unavailable.",
+        // recommend direction
         personalTraits: "Personal traits analysis temporarily unavailable.",
-        careerGuidance: "Career guidance temporarily unavailable.",
-        relationshipGuidance: "Relationship guidance temporarily unavailable.",
         currentLifePhase: "Life phase analysis temporarily unavailable.",
       } as FortuneLifeResponse);
     }
@@ -200,38 +281,23 @@ export async function POST(req: NextRequest) {
     const finalResponse: FortuneLifeResponse = {
       hexagram: title,
       description,
-      citySupport:
-        parsedAnalysis.citySupport ||
-        parsedAnalysis.personalGrowth ||
-        "City analysis not available",
-      locationAlignment:
-        parsedAnalysis.locationAlignment ||
-        parsedAnalysis.yinYangAlignment ||
-        "Location alignment analysis not available",
-      suitableCityTypes:
-        parsedAnalysis.suitableCityTypes ||
-        parsedAnalysis.cityTypes ||
-        "Suitable city types not determined",
-      recommendedCity:
-        parsedAnalysis.recommendedCity ||
-        parsedAnalysis.cityRecommendation ||
-        "No city recommendation available",
       personalTraits:
         parsedAnalysis.personalTraits ||
-        parsedAnalysis.traits ||
         "Personal traits analysis not available",
-      careerGuidance:
-        parsedAnalysis.careerGuidance ||
-        parsedAnalysis.career ||
-        "Career guidance not available",
-      relationshipGuidance:
-        parsedAnalysis.relationshipGuidance ||
-        parsedAnalysis.relationships ||
-        "Relationship guidance not available",
-      currentLifePhase:
-        parsedAnalysis.currentLifePhase ||
-        parsedAnalysis.lifePhase ||
-        "Life phase analysis not available",
+      struggles:
+        parsedAnalysis.struggles ||
+        "Underlying struggles analysis not available",
+      currentCityImpact:
+        parsedAnalysis.currentCityImpact ||
+        "Current city impact analysis not available",
+      destinationCityTraits:
+        parsedAnalysis.destinationCityTraits ||
+        "Destination city traits not available",
+      directionalGuidance: parsedAnalysis.directionalGuidance || {
+        direction: "Not determined",
+        meaning: "Directional guidance not available",
+        recommendedCities: [],
+      },
     };
 
     return NextResponse.json(finalResponse);
@@ -244,5 +310,17 @@ export async function POST(req: NextRequest) {
       },
       { status: 500 }
     );
+  }
+}
+
+// Alternative approach: Use eval() to safely parse Python-style dictionaries
+function parsePythonDict(pythonDictString: string) {
+  try {
+    // Create a safe evaluation context
+    const safeEval = new Function("return " + pythonDictString);
+    return safeEval();
+  } catch (error) {
+    console.error("Error parsing Python dict with eval:", error);
+    return {};
   }
 }

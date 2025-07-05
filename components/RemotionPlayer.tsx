@@ -1,6 +1,6 @@
 "use client";
 import { Player } from "@remotion/player";
-import { Slideshow } from "../app/remotion/Slideshow";
+import { Slideshow } from "@/app/remotion/Slideshow";
 import { useState } from "react";
 import { Play } from "lucide-react";
 

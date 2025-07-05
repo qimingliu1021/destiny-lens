@@ -31,7 +31,6 @@ export default function CoinTossingPage() {
   const [fortuneCity, setFortuneCity] = useState<FortuneCityResponse | null>(
     null
   );
-  const [fortuneLife, setFortuneLife] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [hexagramData, setHexagramData] = useState<HexagramData | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -63,7 +62,6 @@ export default function CoinTossingPage() {
 
   const flipCoins = async () => {
     setFortuneCity(null);
-    setFortuneLife(null);
     setImageUrls([]);
     setLoading(true);
     setHexagramData(null);
@@ -120,7 +118,6 @@ export default function CoinTossingPage() {
         const hexagramCsvData = await hexagramResponse.json();
 
         setFortuneCity(cityData);
-        setFortuneLife(lifeData);
         setHexagramData(hexagramCsvData);
 
         // Store in localStorage for other pages

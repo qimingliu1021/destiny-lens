@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   try {
     const { binary } = await req.json();
 
-    console.log("🔍 Fetching city and landmarks from /api/fortune-city");
+    // console.log("🔍 Fetching city and landmarks from /api/fortune-city");
 
     // 1. Fetch city and landmarks from /api/fortune-city
     const fortuneRes = await fetch("http://localhost:3000/api/fortune-city", {
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     });
 
     const fortuneData = await fortuneRes.json();
-    console.log("🔍 Fortune data:", JSON.stringify(fortuneData, null, 2));
+    // console.log("🔍 Fortune data:", JSON.stringify(fortuneData, null, 2));
 
     const city = fortuneData.selectedCity || "";
     const landmarks = fortuneData.recommendedPlaces || [];
@@ -68,15 +68,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`🌆 Target City: ${city}`);
-    console.log(`📍 Landmarks to search:`, landmarks);
+    // console.log(`🌆 Target City: ${city}`);
+    // console.log(`📍 Landmarks to search:`, landmarks);
 
     // 2. Search for image URLs (don't download, just get URLs)
     const imageResults = await Promise.all(
       landmarks.slice(0, 8).map(async (place, idx) => {
         const landmark = place.name || place;
         const searchQuery = `${landmark}, ${city}`;
-        console.log(`🔎 Searching image for: "${searchQuery}"`);
+        // console.log(`🔎 Searching image for: "${searchQuery}"`);
 
         try {
           const imageUrl = await duckDuckGoImageSearch(searchQuery);
@@ -101,13 +101,13 @@ export async function POST(req: NextRequest) {
     // Filter out null results
     const validImages = imageResults.filter((result) => result !== null);
 
-    console.log(
-      "✅ Found image URLs:",
-      validImages.map((img) => ({
-        landmark: img.landmark,
-        url: img.imageUrl,
-      }))
-    );
+    // console.log(
+    //   "✅ Found image URLs:",
+    //   validImages.map((img) => ({
+    //     landmark: img.landmark,
+    //     url: img.imageUrl,
+    //   }))
+    // );
 
     return NextResponse.json({
       city,

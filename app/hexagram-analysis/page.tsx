@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,14 +8,15 @@ import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
 type FortuneLifeResponse = {
   hexagram: string;
   description: string;
-  citySupport?: string; // How the city supports/hinders growth
-  locationAlignment?: string; // Whether location aligns with Yin-Yang/Trigram forces
-  suitableCityTypes?: string; // What kinds of cities might suit them
-  recommendedCity?: string; // The 1 recommended U.S. city with reasoning
-  personalTraits?: string; // Personal analysis fields
-  careerGuidance?: string;
-  relationshipGuidance?: string;
-  currentLifePhase?: string;
+  personalTraits?: string;
+  struggles?: string;
+  currentCityImpact?: string;
+  destinationCityTraits?: string;
+  directionalGuidance?: {
+    direction: string;
+    meaning: string;
+    recommendedCities: string[];
+  };
   error?: string;
   rawResponse?: string;
 };
@@ -89,7 +91,7 @@ export default function HexagramAnalysisPage() {
   };
 
   // Helper function to safely render any value (string or object)
-  const renderSafely = (value: any): string => {
+  const renderSafely = (value: unknown): string => {
     if (!value) return "";
 
     // If it's already a string, return it
@@ -97,13 +99,8 @@ export default function HexagramAnalysisPage() {
       return value;
     }
 
-    // If it's an object with yinYang and trigrams, format it nicely
-    if (typeof value === "object" && value.yinYang && value.trigrams) {
-      return `Yin-Yang Balance: ${value.yinYang}. Trigram Energy: ${value.trigrams}`;
-    }
-
     // For any other object, convert to readable format
-    if (typeof value === "object") {
+    if (typeof value === "object" && value !== null) {
       return Object.entries(value)
         .map(([key, val]) => `${key}: ${val}`)
         .join(". ");
@@ -113,10 +110,12 @@ export default function HexagramAnalysisPage() {
     return String(value);
   };
 
-  const hasValidContent = (value: any, fallbackText: string): boolean => {
+  const hasValidContent = (value: unknown, fallbackText: string): boolean => {
     if (!value) return false;
     const rendered = renderSafely(value);
-    return rendered && rendered !== fallbackText && rendered.trim() !== "";
+    return Boolean(
+      rendered && rendered !== fallbackText && rendered.trim() !== ""
+    );
   };
 
   return (
@@ -178,68 +177,8 @@ export default function HexagramAnalysisPage() {
       {fortuneLife && (
         <div className="w-full max-w-4xl space-y-6 bg-white rounded-lg border p-8 shadow-lg">
           <h3 className="text-xl font-semibold text-center text-purple-700 mb-6">
-            Your Hexagram & Location Analysis
+            Your Hexagram & Spiritual Analysis
           </h3>
-
-          {/* Energy Alignment */}
-          {hasValidContent(
-            fortuneLife.locationAlignment,
-            "Location alignment analysis not available"
-          ) && (
-            <div className="space-y-2">
-              <h4 className="font-semibold text-purple-600 text-lg">
-                ⚊⚋ Energy Alignment
-              </h4>
-              <p className="text-gray-700 leading-relaxed">
-                {renderSafely(fortuneLife.locationAlignment)}
-              </p>
-            </div>
-          )}
-
-          {/* Ideal City Types */}
-          {hasValidContent(
-            fortuneLife.suitableCityTypes,
-            "Suitable city types not determined"
-          ) && (
-            <div className="space-y-2">
-              <h4 className="font-semibold text-purple-600 text-lg">
-                🌆 Ideal City Types
-              </h4>
-              <p className="text-gray-700 leading-relaxed">
-                {renderSafely(fortuneLife.suitableCityTypes)}
-              </p>
-            </div>
-          )}
-
-          {/* Recommended Destination */}
-          {hasValidContent(
-            fortuneLife.recommendedCity,
-            "No city recommendation available"
-          ) && (
-            <div className="space-y-2">
-              <h4 className="font-semibold text-purple-600 text-lg">
-                ✨ Recommended Destination
-              </h4>
-              <p className="text-gray-700 leading-relaxed">
-                {renderSafely(fortuneLife.recommendedCity)}
-              </p>
-            </div>
-          )}
-
-          {/* City Support */}
-          {hasValidContent(
-            fortuneLife.citySupport,
-            "City analysis not available"
-          ) && (
-            <div className="space-y-2">
-              <h4 className="font-semibold text-purple-600 text-lg">
-                🏙️ Current City Impact
-              </h4>
-              <p className="text-gray-700 leading-relaxed">
-                {renderSafely(fortuneLife.citySupport)}
-              </p>
-            </div>
-          )}
 
           {/* Personal Traits */}
           {hasValidContent(
@@ -248,7 +187,7 @@ export default function HexagramAnalysisPage() {
           ) && (
             <div className="space-y-2">
               <h4 className="font-semibold text-purple-600 text-lg">
-                🌟 Personal Traits
+                🌟 Personal Traits & Inner State
               </h4>
               <p className="text-gray-700 leading-relaxed">
                 {renderSafely(fortuneLife.personalTraits)}
@@ -256,33 +195,94 @@ export default function HexagramAnalysisPage() {
             </div>
           )}
 
-          {/* Career Guidance */}
+          {/* Underlying Struggles */}
           {hasValidContent(
-            fortuneLife.careerGuidance,
-            "Career guidance not available"
+            fortuneLife.struggles,
+            "Underlying struggles analysis not available"
           ) && (
             <div className="space-y-2">
               <h4 className="font-semibold text-purple-600 text-lg">
-                💼 Career Guidance
+                🔍 Hidden Struggles & Challenges
               </h4>
               <p className="text-gray-700 leading-relaxed">
-                {renderSafely(fortuneLife.careerGuidance)}
+                {renderSafely(fortuneLife.struggles)}
               </p>
             </div>
           )}
 
-          {/* Current Life Phase */}
+          {/* Current City Impact */}
           {hasValidContent(
-            fortuneLife.currentLifePhase,
-            "Life phase analysis not available"
+            fortuneLife.currentCityImpact,
+            "Current city impact analysis not available"
           ) && (
             <div className="space-y-2">
               <h4 className="font-semibold text-purple-600 text-lg">
-                🌙 Current Life Phase
+                🏙️ Current City's Influence
               </h4>
               <p className="text-gray-700 leading-relaxed">
-                {renderSafely(fortuneLife.currentLifePhase)}
+                {renderSafely(fortuneLife.currentCityImpact)}
               </p>
+            </div>
+          )}
+
+          {/* Destination City Traits */}
+          {hasValidContent(
+            fortuneLife.destinationCityTraits,
+            "Destination city traits not available"
+          ) && (
+            <div className="space-y-2">
+              <h4 className="font-semibold text-purple-600 text-lg">
+                🌆 Ideal City Qualities
+              </h4>
+              <p className="text-gray-700 leading-relaxed">
+                {renderSafely(fortuneLife.destinationCityTraits)}
+              </p>
+            </div>
+          )}
+
+          {/* Directional Guidance */}
+          {fortuneLife.directionalGuidance && (
+            <div className="space-y-4">
+              <h4 className="font-semibold text-purple-600 text-lg">
+                🧭 Directional Guidance
+              </h4>
+
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg">
+                <div className="space-y-3">
+                  <div>
+                    <span className="font-semibold text-purple-700">
+                      Direction:{" "}
+                    </span>
+                    <span className="text-gray-700">
+                      {fortuneLife.directionalGuidance.direction}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="font-semibold text-purple-700">
+                      Spiritual Meaning:{" "}
+                    </span>
+                    <span className="text-gray-700">
+                      {fortuneLife.directionalGuidance.meaning}
+                    </span>
+                  </div>
+
+                  {fortuneLife.directionalGuidance.recommendedCities &&
+                    fortuneLife.directionalGuidance.recommendedCities.length >
+                      0 && (
+                      <div>
+                        <span className="font-semibold text-purple-700">
+                          Recommended Cities:{" "}
+                        </span>
+                        <span className="text-gray-700">
+                          {fortuneLife.directionalGuidance.recommendedCities.join(
+                            ", "
+                          )}
+                        </span>
+                      </div>
+                    )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -306,33 +306,22 @@ export default function HexagramAnalysisPage() {
 
           {/* If no meaningful content is available */}
           {!hasValidContent(
-            fortuneLife.locationAlignment,
-            "Location alignment analysis not available"
+            fortuneLife.personalTraits,
+            "Personal traits analysis not available"
           ) &&
             !hasValidContent(
-              fortuneLife.suitableCityTypes,
-              "Suitable city types not determined"
+              fortuneLife.struggles,
+              "Underlying struggles analysis not available"
             ) &&
             !hasValidContent(
-              fortuneLife.recommendedCity,
-              "No city recommendation available"
+              fortuneLife.currentCityImpact,
+              "Current city impact analysis not available"
             ) &&
             !hasValidContent(
-              fortuneLife.citySupport,
-              "City analysis not available"
+              fortuneLife.destinationCityTraits,
+              "Destination city traits not available"
             ) &&
-            !hasValidContent(
-              fortuneLife.personalTraits,
-              "Personal traits analysis not available"
-            ) &&
-            !hasValidContent(
-              fortuneLife.careerGuidance,
-              "Career guidance not available"
-            ) &&
-            !hasValidContent(
-              fortuneLife.currentLifePhase,
-              "Life phase analysis not available"
-            ) && (
+            !fortuneLife.directionalGuidance && (
               <div className="text-center p-8 bg-gray-50 rounded-lg">
                 <p className="text-gray-600 mb-4">
                   No analysis available for this hexagram. Try generating a new
