@@ -23,7 +23,7 @@ export default function AboutPage() {
       {/* Story Section */}
       <div className="max-w-4xl mx-auto px-6 pb-20">
         <div className="bg-gradient-to-r from-slate-800/50 to-amber-900/30 rounded-2xl p-8 md:p-12 border border-amber-500/20 backdrop-blur-sm">
-          <div className="space-y-6 text-amber-100/90 text-lg leading-relaxed">
+          {/* <div className="space-y-6 text-amber-100/90 text-lg leading-relaxed">
             <p>
               This project — I Ching × Destiny × City Guidance — is a gift I'm
               giving to myself. It represents my journey of breaking free from
@@ -122,7 +122,7 @@ export default function AboutPage() {
             <p className="text-amber-300 font-medium text-xl text-center pt-6">
               It is a reflection of my destiny, and my way of reclaiming myself.
             </p>
-          </div>
+          </div> */}
         </div>
 
         {/* Back to Home */}
