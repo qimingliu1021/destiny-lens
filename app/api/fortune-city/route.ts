@@ -1,203 +1,171 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFile } from "fs/promises";
-import { parse } from "csv-parse/sync";
-import path from "path";
+import { supabaseServer } from "../../../lib/supabase";
 
-const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+// Direction to angle mapping (degrees)
+const directionAngles: Record<string, number> = {
+  North: 0,
+  Northeast: 45,
+  East: 90,
+  Southeast: 135,
+  South: 180,
+  Southwest: 225,
+  West: 270,
+  Northwest: 315,
+};
 
-interface HexagramRecord {
-  hex: string;
-  hex_font: string;
-  binary: string;
-  english: string;
-  od: string;
-  pinyin: string;
-  trad_chinese: string;
-  above: string;
-  below: string;
-  symbolic: string;
-  image: string;
-  judgment: string;
-  lines: string;
+// Helper function to calculate bearing between two points
+function calculateBearing(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const lat1Rad = (lat1 * Math.PI) / 180;
+  const lat2Rad = (lat2 * Math.PI) / 180;
+
+  const y = Math.sin(dLon) * Math.cos(lat2Rad);
+  const x =
+    Math.cos(lat1Rad) * Math.sin(lat2Rad) -
+    Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
+
+  let bearing = (Math.atan2(y, x) * 180) / Math.PI;
+  return (bearing + 360) % 360; // Normalize to 0-360
 }
 
-// Complete Trigram definitions for all 8 trigrams
-const trigramMap: Record<
-  string,
-  { name: string; symbol: string; direction: string; element: string }
-> = {
-  "111": {
-    name: "Qián",
-    symbol: "☰",
-    direction: "Northwest",
-    element: "Heaven",
-  },
-  "000": {
-    name: "Kūn",
-    symbol: "☷",
-    direction: "Southwest",
-    element: "Earth",
-  },
-  "011": {
-    name: "Duì",
-    symbol: "☱",
-    direction: "West",
-    element: "Lake",
-  },
-  "101": {
-    name: "Lí",
-    symbol: "☲",
-    direction: "South",
-    element: "Fire",
-  },
-  "001": {
-    name: "Zhèn",
-    symbol: "☳",
-    direction: "East",
-    element: "Thunder",
-  },
-  "110": {
-    name: "Xùn",
-    symbol: "☴",
-    direction: "Southeast",
-    element: "Wind",
-  },
-  "010": {
-    name: "Kǎn",
-    symbol: "☵",
-    direction: "North",
-    element: "Water",
-  },
-  "100": {
-    name: "Gèn",
-    symbol: "☶",
-    direction: "Northeast",
-    element: "Mountain",
-  },
-};
+// Helper function to check if city is in the given direction
+function isInDirection(
+  userLat: number,
+  userLon: number,
+  cityLat: number,
+  cityLon: number,
+  targetDirection: string
+): boolean {
+  const bearing = calculateBearing(userLat, userLon, cityLat, cityLon);
+  const targetAngle = directionAngles[targetDirection];
 
-const cityMap: Record<string, string[]> = {
-  North: ["Seattle", "Portland", "Vancouver", "Minneapolis", "Detroit"],
-  Northeast: ["Boston", "New York", "Philadelphia", "Montreal", "Toronto"],
-  East: ["New York", "Boston", "Miami", "Atlanta", "Washington DC"],
-  Southeast: ["Miami", "New Orleans", "Atlanta", "Charleston", "Nashville"],
-  South: ["Los Angeles", "San Diego", "Phoenix", "Houston", "Austin"],
-  Southwest: ["Los Angeles", "Phoenix", "Las Vegas", "Denver", "Albuquerque"],
-  West: ["San Francisco", "Los Angeles", "Seattle", "Portland", "Las Vegas"],
-  Northwest: ["Seattle", "Portland", "Vancouver", "Spokane", "Boise"],
-};
+  // Allow 45 degree tolerance on each side
+  const tolerance = 45;
+  let minAngle = targetAngle - tolerance;
+  let maxAngle = targetAngle + tolerance;
+
+  // Handle wraparound (e.g., North direction)
+  if (minAngle < 0) {
+    return bearing >= 360 + minAngle || bearing <= maxAngle;
+  }
+  if (maxAngle > 360) {
+    return bearing >= minAngle || bearing <= maxAngle - 360;
+  }
+
+  return bearing >= minAngle && bearing <= maxAngle;
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const { binary } = await req.json();
+    const { binary, direction, userCity, userState, latitude, longitude } =
+      await req.json();
 
+    // Validate input
     if (!binary || binary.length !== 6) {
       return NextResponse.json(
-        { error: "Invalid binary input" },
+        { error: "Invalid binary code" },
         { status: 400 }
       );
     }
 
-    if (!ANTHROPIC_API_KEY) {
+    if (!direction || !directionAngles[direction]) {
       return NextResponse.json(
-        { error: "API key not configured" },
-        { status: 500 }
+        { error: "Valid direction is required" },
+        { status: 400 }
       );
     }
 
-    // Read CSV and find hexagram
-    const filePath = path.join(process.cwd(), "public", "yijing_fixed.csv");
-    const csvRaw = await readFile(filePath, "utf-8");
-    const records: HexagramRecord[] = parse(csvRaw, {
-      columns: true,
-      skip_empty_lines: true,
-    });
-
-    const reversedBinary = binary.split("").reverse().join("");
-    const match = records.find((row) => row.binary === reversedBinary);
-
-    if (!match) {
+    if (!latitude || !longitude) {
       return NextResponse.json(
-        { error: "Hexagram not found" },
-        { status: 404 }
+        { error: "User location coordinates are required" },
+        { status: 400 }
       );
     }
 
-    const title = match.english;
-    const description = match.symbolic;
+    // Get cities from Supabase
+    let cities = [];
+    let supabaseError = null;
+    let successfulTableName = null;
 
-    // Get trigrams and direction
-    const direction = trigramMap[binary]?.direction || "North";
-    const cities = cityMap[direction] || cityMap["North"];
+    if (supabaseServer) {
+      try {
+        const { data, error } = await supabaseServer
+          .from("us_city") // Using correct table name
+          .select("*");
 
-    const cityText = cities.map((city, i) => `${i + 1}. ${city}`).join("\n");
-    const directionText = `The upper trigram points toward the ${direction} direction.`;
+        if (!error && data) {
+          cities = data;
+          successfulTableName = "us_ctiy";
+        } else {
+          supabaseError = error?.message || "Unknown error";
+        }
+      } catch (error) {
+        console.error("Supabase error:", error);
+        supabaseError = error.message;
+      }
+    } else {
+      supabaseError = "Supabase not configured";
+    }
 
-    // Line analysis
-    const lineDescriptions = [
-      "Line 1 (Foundation): The beginning of change; initial conditions.",
-      "Line 2 (Field/Response): The appropriate response to external action.",
-      "Line 3 (Decision Point): Danger of excess or premature action.",
-      "Line 4 (Transition): Movement toward resolution, but still unstable.",
-      "Line 5 (Ruler/Guide): Power in alignment; effective leadership.",
-      "Line 6 (Completion): End of cycle; transcendence or decay.",
-    ];
+    // Filter cities based on direction from user's location
+    let filteredCities = [];
 
-    const linesWithMeaning = binary
-      .split("")
-      .map(
-        (bit: string, i: number) =>
-          `${lineDescriptions[i]} ${
-            bit === "1" ? "Yang (solid)" : "Yin (broken)"
-          }`
-      )
-      .join("\n");
+    if (cities.length > 0) {
+      filteredCities = cities.filter((city) => {
+        // Check if city has valid coordinates
+        const cityLat = parseFloat(city.lat);
+        const cityLon = parseFloat(city.lon);
 
-    // Claude prompt for city recommendations
-    const prompt = `A user has drawn Hexagram "${title}" (${description})
+        if (isNaN(cityLat) || isNaN(cityLon)) {
+          return false;
+        }
 
-${linesWithMeaning}
+        // Skip if it's the same city as user's location
+        if (city.city?.toLowerCase() === userCity?.toLowerCase()) {
+          return false;
+        }
 
-${directionText}
+        return isInDirection(latitude, longitude, cityLat, cityLon, direction);
+      });
+    }
 
-Here are some cities in the ${direction} direction near their location:
-${cityText}
+    // Select a random city from filtered results
+    let recommendedCity = null;
+    if (filteredCities.length > 0) {
+      const randomIndex = Math.floor(Math.random() * filteredCities.length);
+      const rawCity = filteredCities[randomIndex];
 
-Pick one city and explain why it suits them in realistic terms. Recommend 3–5 specific places they should explore there. Respond in JSON format with this structure:
-{
-  "selectedCity": "City Name",
-  "explanation": "Why this city suits them",
-  "recommendedPlaces": [
-    {"name": "Place Name", "reason": "Why this place"}
-  ]
-}`;
-
-    const claudeRes = await fetch(ANTHROPIC_API_URL, {
-      method: "POST",
-      headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-3-5-sonnet-20240620",
-        max_tokens: 600,
-        temperature: 0.7,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-
-    const result = await claudeRes.json();
-    const parsed = JSON.parse(result?.content?.[0]?.text || "{}");
+      recommendedCity = {
+        name: rawCity.city,
+        state: rawCity.state,
+        latitude: parseFloat(rawCity.lat),
+        longitude: parseFloat(rawCity.lon),
+      };
+    }
 
     return NextResponse.json({
-      hexagram: title,
+      success: true,
       direction,
-      ...parsed,
+      userLocation: {
+        city: userCity,
+        state: userState,
+        latitude,
+        longitude,
+      },
+      recommendedCity,
+      totalCitiesInDirection: filteredCities.length,
+      totalCitiesInDatabase: cities.length,
+      successfulTableName,
+      supabaseError,
+      binary,
     });
   } catch (error) {
-    console.error("Fortune city error:", error);
+    console.error("Fortune City API error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

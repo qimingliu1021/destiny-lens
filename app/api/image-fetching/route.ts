@@ -43,40 +43,60 @@ async function duckDuckGoImageSearch(query: string): Promise<string | null> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { binary } = await req.json();
+    const { binary, userCity, userState, latitude, longitude, direction } =
+      await req.json();
 
-    // console.log("🔍 Fetching city and landmarks from /api/fortune-city");
+    console.log("🔍 Fetching city from /api/fortune-city");
 
-    // 1. Fetch city and landmarks from /api/fortune-city
+    // 1. Fetch city from /api/fortune-city with proper parameters
     const fortuneRes = await fetch("http://localhost:3000/api/fortune-city", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ binary }),
+      body: JSON.stringify({
+        binary,
+        direction,
+        userCity,
+        userState,
+        latitude,
+        longitude,
+      }),
     });
 
     const fortuneData = await fortuneRes.json();
-    // console.log("🔍 Fortune data:", JSON.stringify(fortuneData, null, 2));
+    console.log("? fortuneRes:", fortuneRes);
+    console.log("🔍 Fortune data:", JSON.stringify(fortuneData, null, 2));
 
-    const city = fortuneData.selectedCity || "";
-    const landmarks = fortuneData.recommendedPlaces || [];
+    // Extract city from new response format
+    const city = fortuneData.recommendedCity?.name || "";
+    const state = fortuneData.recommendedCity?.state || "";
 
-    if (!city || !Array.isArray(landmarks) || landmarks.length === 0) {
-      console.log("⚠️ Invalid fortune data. Missing city or landmarks.");
+    if (!city) {
+      console.log("⚠️ No recommended city found from /api/fortune-city.");
       return NextResponse.json(
-        { error: "No city or landmarks found from /api/fortune-city." },
+        { error: "No city found from /api/fortune-city." },
         { status: 400 }
       );
     }
 
-    // console.log(`🌆 Target City: ${city}`);
-    // console.log(`📍 Landmarks to search:`, landmarks);
+    console.log(`🌆 Target City: ${city}, ${state}`);
 
-    // 2. Search for image URLs (don't download, just get URLs)
+    // 2. Create landmarks for the city (since we don't have recommendedPlaces anymore)
+    const commonLandmarks = [
+      "downtown skyline",
+      "city hall",
+      "main street",
+      "central park",
+      "historic district",
+      "waterfront",
+      "university campus",
+      "art museum",
+    ];
+
+    // 3. Search for image URLs
     const imageResults = await Promise.all(
-      landmarks.slice(0, 8).map(async (place, idx) => {
-        const landmark = place.name || place;
-        const searchQuery = `${landmark}, ${city}`;
-        // console.log(`🔎 Searching image for: "${searchQuery}"`);
+      commonLandmarks.slice(0, 8).map(async (landmark, idx) => {
+        const searchQuery = `${landmark} ${city} ${state}`;
+        console.log(`🔎 Searching image for: "${searchQuery}"`);
 
         try {
           const imageUrl = await duckDuckGoImageSearch(searchQuery);
@@ -110,7 +130,7 @@ export async function POST(req: NextRequest) {
     // );
 
     return NextResponse.json({
-      city,
+      city: `${city}, ${state}`,
       images: validImages,
       imageUrls: validImages.map((img) => img.imageUrl),
       count: validImages.length,

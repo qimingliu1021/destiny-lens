@@ -210,7 +210,7 @@ Respond strictly in **JSON** format with these fields:
 
     const result = await claudeResponse.json();
     const responseText = result?.content?.[0]?.text || "";
-    console.log("responseText:\n", responseText);
+    // console.log("responseText:\n", responseText);
 
     if (!responseText) {
       throw new Error("Empty response from Claude API");
@@ -256,7 +256,7 @@ Respond strictly in **JSON** format with these fields:
 
       // console.log("Cleaned JSON text:", cleanedText);
       parsedAnalysis = JSON.parse(cleanedText);
-      console.log("parsedAnalysis:", parsedAnalysis);
+      // console.log("parsedAnalysis:", parsedAnalysis);
     } catch (jsonError) {
       console.error("JSON parse error:", jsonError);
       console.error("Raw response:", responseText);
@@ -267,13 +267,15 @@ Respond strictly in **JSON** format with these fields:
         description,
         error: "Unable to parse AI analysis",
         rawResponse: responseText.substring(0, 300),
-        citySupport: "City analysis temporarily unavailable.",
-        locationAlignment:
-          "Location alignment analysis temporarily unavailable.",
-        suitableCityTypes: "Suitable city analysis temporarily unavailable.",
-        // recommend direction
         personalTraits: "Personal traits analysis temporarily unavailable.",
-        currentLifePhase: "Life phase analysis temporarily unavailable.",
+        struggles: "Underlying struggles analysis not available",
+        currentCityImpact: "Current city impact analysis not available",
+        destinationCityTraits: "Destination city traits not available",
+        directionalGuidance: {
+          direction: "Not determined",
+          meaning: "Directional guidance not available",
+          recommendedCities: [],
+        },
       } as FortuneLifeResponse);
     }
 

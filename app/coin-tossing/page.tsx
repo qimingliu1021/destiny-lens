@@ -79,26 +79,34 @@ export default function CoinTossingPage() {
       // Get user location first
       const location = await getUserLocation();
       setUserLocation(location);
-      console.log("User location:", location);
 
-      // Call all APIs with location data
-      const [cityResponse, lifeResponse, hexagramResponse] = await Promise.all([
+      // First call fortune-life to get direction
+      const lifeResponse = await fetch("/api/fortune-life", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          binary,
+          userCity: location.city,
+          userState: location.state,
+          latitude: location.latitude,
+          longitude: location.longitude,
+        }),
+      });
+
+      const lifeData = await lifeResponse.json();
+      console.log("Fortune Life Response:", lifeData);
+
+      // Extract direction from fortune-life response
+      const direction = lifeData.directionalGuidance?.direction || "North";
+
+      // Then call other APIs with the direction
+      const [cityResponse, hexagramResponse] = await Promise.all([
         fetch("/api/fortune-city", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             binary,
-            userCity: location.city,
-            userState: location.state,
-            latitude: location.latitude,
-            longitude: location.longitude,
-          }),
-        }),
-        fetch("/api/fortune-life", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            binary,
+            direction, // Pass the direction from fortune-life
             userCity: location.city,
             userState: location.state,
             latitude: location.latitude,
@@ -112,9 +120,8 @@ export default function CoinTossingPage() {
         }),
       ]);
 
-      if (cityResponse.ok && lifeResponse.ok && hexagramResponse.ok) {
+      if (lifeResponse.ok && cityResponse.ok && hexagramResponse.ok) {
         const cityData = await cityResponse.json();
-        const lifeData = await lifeResponse.json();
         const hexagramCsvData = await hexagramResponse.json();
 
         setFortuneCity(cityData);
@@ -133,7 +140,14 @@ export default function CoinTossingPage() {
         const imageResponse = await fetch("/api/image-fetching", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ binary }),
+          body: JSON.stringify({
+            binary,
+            direction, // ← Add direction from fortune-life
+            userCity: location.city,
+            userState: location.state,
+            latitude: location.latitude,
+            longitude: location.longitude,
+          }),
         });
 
         if (imageResponse.ok) {

@@ -74,6 +74,8 @@ export default function HexagramAnalysisPage() {
       if (lifeResponse.ok && hexagramResponse.ok) {
         const lifeData = await lifeResponse.json();
         const hexagramCsvData = await hexagramResponse.json();
+        console.log("lifeData", lifeData);
+        console.log("hexagramCsvData", hexagramCsvData);
 
         setFortuneLife(lifeData);
         setHexagramData(hexagramCsvData);
